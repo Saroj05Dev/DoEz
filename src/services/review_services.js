@@ -25,7 +25,7 @@ async function getProviderReviewsService(providerId) {
 }
 
 async function getAllReviewsService() {
-    return await require("../repositories/review_repository").getAllReviews();
+    return await require("../repositories/review_repositories").getAllReviews();
 }
 
 module.exports = { submitReview, getProviderReviewsService, getAllReviewsService };

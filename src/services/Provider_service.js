@@ -3,15 +3,16 @@ const {
   findUserById,
 } = require("../repositories/userRepository");
 const mongoose = require("mongoose");
+const cloudinary = require("../config/cloudinaryConfig");
+const fs = require("fs");
 
 async function onboardProvider(userId, data) {
   return await updateUserById(userId, {
     role: "provider",
-    kycStatus: "pending",
+    kycStatus: null,
     rates: data.rates,
     workArea: data.workArea,
     experienceYears: data.experienceYears,
-    kycDocs: data.kycDocs,
     availability: "offline",
   });
 }
@@ -56,10 +57,36 @@ async function getEarnings(id) {
   return { completedJobs: completed, monthlyEarnings: agg[0]?.total || 0 };
 }
 
+async function handleKycUpload(userId, files) {
+  const provider = await findUserById(userId);
+  if (!provider) throw { reason: "Provider not found", statusCode: 404 };
+
+  const uploadedUrls = [];
+
+  for (const file of files) {
+    const result = await cloudinary.uploader.upload(file.path, {
+      folder: "fixerly/kyc_docs",
+    });
+    uploadedUrls.push(result.secure_url);
+
+    // Cleanup local file
+    fs.unlinkSync(file.path);
+  }
+
+  // Merge existing docs + set status
+  const updatedProvider = await updateUserById(userId, {
+    kycDocs: [...(provider.kycDocs || []), ...uploadedUrls],
+    kycStatus: "pending",
+  });
+
+  return updatedProvider;
+}
+
 module.exports = {
   onboardProvider,
   getProviderProfile,
   updateProviderProfile,
   toggleAvailability,
   getEarnings,
+  handleKycUpload,
 };

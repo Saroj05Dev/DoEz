@@ -43,14 +43,14 @@ async function verifyUserOtp(req, res) {
 }
 async function createUser(req, res) {
     try {
-        console.log("Incoming user data:", req.body); // ✅ log request body
+        console.log("Incoming user data:", req.body); //  log request body
 
         const user = await registerUser(req.body);
-        console.log("User created successfully:", user); // ✅ log success
+        console.log("User created successfully:", user); //  log success
 
         return res.status(201).json({ success: true, data: user });
     } catch (error) {
-        console.error("🔥 User creation error:", error); // ✅ log actual error
+        console.error("User creation error:", error); //  log actual error
         return res.status(error.statusCode || 500).json({ success: false, error: error.reason || error.message });
     }
 }

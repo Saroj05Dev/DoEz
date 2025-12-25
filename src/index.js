@@ -8,6 +8,7 @@ const serviceRoutes = require('./routes/Service_routes');
 const subServiceRoutes = require('./routes/Sub_services_routes');
 const bookingRoutes = require('./routes/booking_routes');
 const userRouter = require('./routes/userRoutes');
+const adminRouter = require('./routes/admin_routes');
 const authRouter = require('./routes/authRoutes');
 const provideroutes = require('./routes/Provider_routes');
 const reviewroutes = require('./routes/review_routes');

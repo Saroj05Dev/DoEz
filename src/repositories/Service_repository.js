@@ -1,25 +1,52 @@
+// src/repositories/service_repository.js
 const mongoose = require('mongoose');
 const Service = require('../schema/Service_schema');
 
 async function createService(serviceData) {
-    const service = new Service(serviceData);
-    return await service.save();
+    try {
+        const service = new Service(serviceData);
+        return await service.save();
+    } catch (error) {
+        throw error; // directly throw to be handled in controller
+    }
 }
 
 async function getServiceById(id) {
-    return await Service.findById(id);
+    try {
+        const service = await Service.findById(id);
+        if (!service) throw new Error("Service not found");
+        return service;
+    } catch (error) {
+        throw error;
+    }
 }
 
 async function getAllServices() {
-    return await Service.find();
+    try {
+        return await Service.find();
+    } catch (error) {
+        throw error;
+    }
 }
 
 async function updateService(id, updateData) {
-    return await Service.findByIdAndUpdate(id, updateData, { new: true });
+    try {
+        const updatedService = await Service.findByIdAndUpdate(id, updateData, { new: true });
+        if (!updatedService) throw new Error("Service not found to update");
+        return updatedService;
+    } catch (error) {
+        throw error;
+    }
 }
 
 async function deleteService(id) {
-    return await Service.findByIdAndDelete(id);
+    try {
+        const deletedService = await Service.findByIdAndDelete(id);
+        if (!deletedService) throw new Error("Service not found to delete");
+        return deletedService;
+    } catch (error) {
+        throw error;
+    }
 }
 
 module.exports = {

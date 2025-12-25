@@ -5,17 +5,17 @@ const {
   updateProviderProfile,
   toggleAvailability,
   getEarnings,
+  handleKycUpload,
 } = require("../services/Provider_service");
 
 async function onboard(req, res) {
   try {
-    return res
-      .status(200)
-      .json({
-        success: true,
-        data: await onboardProvider(req.user.id, req.body),
-      });
+    return res.status(200).json({
+      success: true,
+      data: await onboardProvider(req.user.id, req.body),
+    });
   } catch (e) {
+    console.error(e);
     return res
       .status(e.statusCode || 500)
       .json({ success: false, error: e.reason });
@@ -36,12 +36,10 @@ async function getProfile(req, res) {
 
 async function updateProfile(req, res) {
   try {
-    return res
-      .status(200)
-      .json({
-        success: true,
-        data: await updateProviderProfile(req.user.id, req.body),
-      });
+    return res.status(200).json({
+      success: true,
+      data: await updateProviderProfile(req.user.id, req.body),
+    });
   } catch (e) {
     return res
       .status(e.statusCode || 500)
@@ -51,12 +49,10 @@ async function updateProfile(req, res) {
 
 async function toggleAvail(req, res) {
   try {
-    return res
-      .status(200)
-      .json({
-        success: true,
-        data: await toggleAvailability(req.user.id, req.body.status),
-      });
+    return res.status(200).json({
+      success: true,
+      data: await toggleAvailability(req.user.id, req.body.status),
+    });
   } catch (e) {
     return res
       .status(e.statusCode || 500)
@@ -76,4 +72,33 @@ async function getEarn(req, res) {
   }
 }
 
-module.exports = { onboard, getProfile, updateProfile, toggleAvail, getEarn };
+async function uploadKycDocs(req, res) {
+  try {
+    if (!req.files || req.files.length === 0)
+      return res
+        .status(400)
+        .json({ success: false, message: "No files uploaded" });
+
+    const result = await handleKycUpload(req.user.id, req.files);
+
+    return res.status(200).json({
+      success: true,
+      message: "KYC documents uploaded successfully",
+      data: result,
+    });
+  } catch (e) {
+    console.error("KYC Upload Error:", e);
+    return res
+      .status(e.statusCode || 500)
+      .json({ success: false, error: e.reason || "Upload failed" });
+  }
+}
+
+module.exports = { 
+  onboard, 
+  getProfile, 
+  updateProfile, 
+  toggleAvail, 
+  getEarn,
+  uploadKycDocs
+};
