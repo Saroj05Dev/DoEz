@@ -1,5 +1,6 @@
 const express = require('express');
 const cookieParser = require('cookie-parser');
+const cors = require('cors'); 
 
 const ServerConfig = require('./config/serverConfig');
 const connectDB = require('./config/dbConfig');
@@ -11,27 +12,29 @@ const adminRouter = require('./routes/admin_routes');
 const authRouter = require('./routes/authRoutes');
 const provideroutes = require('./routes/Provider_routes');
 const reviewroutes = require('./routes/review_routes');
+
 const app = express();
+
+
+app.use(cors({
+  origin: 'http://localhost:5173',  
+  credentials: true                 
+}));
 
 app.use(express.json());
 app.use(express.text());
 app.use(express.urlencoded({ extended: true }));
-app.use(cookieParser())
+app.use(cookieParser());
 
 app.use('/api/users', userRouter);
 app.use('/api/auth', authRouter);
-
 app.use('/api/services', serviceRoutes);
 app.use('/api/sub-services', subServiceRoutes);
-app.use('/api/reviews',reviewroutes);
+app.use('/api/reviews', reviewroutes);
 app.use('/api/booking', bookingRoutes);
-app.use('/api/provider',provideroutes);
-app.use('/api/admin', adminRouter)
+app.use('/api/provider', provideroutes);
+
 app.listen(ServerConfig.PORT, async () => {
     await connectDB();
     console.log(`Server started at port ${ServerConfig.PORT}...!!`);
 });
-
-
-// srluDPl7mgPG6I5d
-// sarojsarojkumar753_db_user

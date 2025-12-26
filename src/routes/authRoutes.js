@@ -1,9 +1,24 @@
 const express = require('express');
 const { login, logout } = require('../controllers/authController');
+const { isAuthenticated } = require('../middlewares/authMiddleware');
 
-const authRouter = express.Router();
+const router = express.Router();
 
-authRouter.post('/login', login);
-authRouter.post('/logout', logout);
+router.post('/login', login);
+router.post('/logout', logout);
 
-module.exports = authRouter;
+// ✅ REQUIRED FOR ADMIN ROUTE
+router.get('/me', isAuthenticated, (req, res) => {
+  res.status(200).json({
+    success: true,
+    data: {
+      id: req.user._id,
+      name: req.user.name,
+      email: req.user.email,
+      phone: req.user.phone,
+      role: req.user.role
+    }
+  });
+});
+
+module.exports = router;
