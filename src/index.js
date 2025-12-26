@@ -1,6 +1,6 @@
 const express = require('express');
 const cookieParser = require('cookie-parser');
-const cors = require('cors'); // 👈 Add this import
+const cors = require('cors'); 
 
 const ServerConfig = require('./config/serverConfig');
 const connectDB = require('./config/dbConfig');
@@ -15,10 +15,10 @@ const reviewroutes = require('./routes/review_routes');
 
 const app = express();
 
-// 👈 ADD CORS HERE - BEFORE any routes or middleware
+
 app.use(cors({
-  origin: 'http://localhost:5173',  // Your Vite frontend
-  credentials: true                 // Required for httpOnly cookies
+  origin: 'http://localhost:5173',  
+  credentials: true                 
 }));
 
 app.use(express.json());
