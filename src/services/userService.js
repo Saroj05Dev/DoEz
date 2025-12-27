@@ -31,30 +31,38 @@ async function updateUserProfile(id, updatedData) {
 }
 
 async function registerUser(userDetails) {
-    const user = await findUser({ email: userDetails.email });
-    const existingPhone = await findUser({ phone: userDetails.phone });
+  let { email, phone, password } = userDetails;
+  phone = phone.replace(/\D/g, "");
 
-    if (user || existingPhone) {
-        throw { reason: "User with this email or phone already exists", statusCode: 400 };
-    }
+  const existing =
+    (await findUser({ email })) || (await findUser({ phone }));
 
-    const otpStillExists = await findOtp(userDetails.phone);
-    if (otpStillExists) {
-        throw { reason: "Phone number not verified yet", statusCode: 400 };
-    }
+  if (existing) {
+    throw {
+      reason: "User with this email or phone already exists",
+      statusCode: 400,
+    };
+  }
 
-    const newUser = await createUser({
-        name: userDetails.name,
-        email: userDetails.email,
-        password: userDetails.password,
-        phone: userDetails.phone,
-        role: userDetails.role || "user",
-        isVerified: true
-    });
+  // OTP MUST BE VERIFIED (means OTP doc must be deleted)
+  const otpStillExists = await findOtp(phone);
+  if (otpStillExists) {
+    throw {
+      reason: "Phone number not verified. Please verify OTP.",
+      statusCode: 400,
+    };
+  }
 
-    if (!newUser) throw { reason: "Failed to create user", statusCode: 500 };
-    return newUser;
+  const hashedPassword = await bcrypt.hash(password, 10);
+
+  return createUser({
+    ...userDetails,
+    phone,
+    password: hashedPassword,
+    isVerified: true,
+  });
 }
+
 async function getAllUsersService() {
     return await require("../repositories/userRepository").getAllUsers();
 }

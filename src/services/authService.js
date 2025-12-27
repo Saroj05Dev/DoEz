@@ -1,30 +1,108 @@
-const bcrypt = require('bcrypt');
-const jwt = require('jsonwebtoken');
+const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken");
 const { JWT_SECRET } = require("../config/serverConfig");
-const { findUser } = require("../repositories/userRepository");
+const { findUser, createUser } = require("../repositories/userRepository");
+const { findOtp } = require("../repositories/otpRepository");
 
 async function loginUser(authDetails) {
-    const phone = authDetails.phone;
-    const password = authDetails.password;
+  let { phone, password } = authDetails;
+  phone = phone.replace(/\D/g, "");
 
-    // 1. Check if there's a register user with the phone number
-    const user = await findUser({ phone });
-    if (!user) throw { reason: "User not found", statusCode: 400 };
+  // 1 Check user
+  const user = await findUser({ phone });
+  if (!user) {
+    throw { reason: "User not found", statusCode: 400 };
+  }
 
-    // 2. If the user is found check if the password is correct
-    const valid = await bcrypt.compare(password, user.password);
-    if (!valid) throw { reason: "Invalid password", statusCode: 400 };
+  // 2 Verify password
+  const valid = await bcrypt.compare(password, user.password);
+  if (!valid) {
+    throw { reason: "Invalid password", statusCode: 400 };
+  }
 
-    const userRole = user.role ? user.role : "user";
+  const role = user.role || "user";
 
-    // 3. If the password is valid, create a token and return it
-    const token = jwt.sign({ phone: user.phone, id: user._id, role: userRole }, JWT_SECRET, { expiresIn: "1h" });
-    return { token, role: userRole, userData: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        phone: user.phone
-    } }
+  // 3 Generate token
+  const token = jwt.sign(
+    { id: user._id, phone: user.phone, role },
+    JWT_SECRET,
+    { expiresIn: "1h" }
+  );
+
+  return {
+    token,
+    role,
+    userData: {
+      id: user._id,
+      name: user.name,
+      email: user.email,
+      phone: user.phone,
+    },
+  };
 }
 
-module.exports = { loginUser };
+async function registerAndLogin(userDetails) {
+  let { name, email, phone, password, role } = userDetails;
+  phone = phone.replace(/\D/g, "");
+
+  // 1 Check duplicates
+  const existing =
+    (await findUser({ email })) || (await findUser({ phone }));
+
+  if (existing) {
+    throw {
+      reason: "User with this email or phone already exists",
+      statusCode: 400,
+    };
+  }
+
+  // 2 OTP must be verified
+  const otpStillExists = await findOtp(phone);
+  if (otpStillExists) {
+    throw {
+      reason: "Phone number not verified. Please verify OTP.",
+      statusCode: 400,
+    };
+  }
+
+  // 3 Validate password (raw)
+  const passwordRegex =
+    /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+
+  if (!passwordRegex.test(password)) {
+    throw { reason: "Weak password", statusCode: 400 };
+  }
+
+  // 4 Hash ONCE
+  const hashedPassword = await bcrypt.hash(password, 10);
+
+  // 5 Create user
+  const user = await createUser({
+    name,
+    email,
+    phone,
+    password: hashedPassword,
+    role: role || "user",
+    isVerified: true,
+  });
+
+  // 6 Auto-login token
+  const token = jwt.sign(
+    { id: user._id, phone: user.phone, role: user.role },
+    JWT_SECRET,
+    { expiresIn: "1h" }
+  );
+
+  return {
+    token,
+    role: user.role,
+    userData: {
+      id: user._id,
+      name: user.name,
+      email: user.email,
+      phone: user.phone,
+    },
+  };
+}
+
+module.exports = { loginUser, registerAndLogin };

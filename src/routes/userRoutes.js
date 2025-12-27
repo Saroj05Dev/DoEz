@@ -1,14 +1,19 @@
-const express = require('express');
-const { createUser, sendOtpToUser, verifyUserOtp, getProfile, updateProfile,getAllUsers } = require('../controllers/userController');
-const { isAuthenticated } = require('../middlewares/authMiddleware');
+const express = require("express");
+const {
+  createUser,
+  sendOtpToUser,
+  verifyUserOtp,
+} = require("../controllers/userController");
 
-const userRouter = express.Router();
+const { isAuthenticated } = require("../middlewares/authMiddleware");
 
-userRouter.post('/register/send-otp', sendOtpToUser);
-userRouter.post('/register/verify-otp', verifyUserOtp);
-userRouter.post('/', createUser);
-userRouter.get('/profile', isAuthenticated, getProfile);
-userRouter.put('/profile', isAuthenticated, updateProfile);
-// userRouter.get('/all', isAuthenticated, isAuthorized(['admin']), getAllUsers);
+const router = express.Router();
 
-module.exports = userRouter;
+router.post("/register/send-otp", sendOtpToUser);
+router.post("/register/verify-otp", verifyUserOtp);
+router.post("/", createUser);
+
+router.get("/profile", isAuthenticated);
+router.put("/profile", isAuthenticated);
+
+module.exports = router;
