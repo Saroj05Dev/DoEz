@@ -7,6 +7,7 @@ const connectDB = require('./config/dbConfig');
 const serviceRoutes = require('./routes/Service_routes');
 const subServiceRoutes = require('./routes/Sub_services_routes');
 const subServices1Routes = require('./routes/Sub_services1_routes');
+const subService2Routes = require('./routes/Sub_service2_routes');
 const bookingRoutes = require('./routes/booking_routes');
 const userRouter = require('./routes/userRoutes');
 const adminRouter = require('./routes/admin_routes');
@@ -31,7 +32,8 @@ app.use('/api/users', userRouter);
 app.use('/api/auth', authRouter);
 app.use('/api/services', serviceRoutes);
 app.use('/api/sub-services', subServiceRoutes);
-app.use('/api/sub-services1', subServices1Routes)
+app.use('/api/sub-services1', subServices1Routes);
+app.use('/api/sub-services2', subService2Routes);
 app.use('/api/reviews', reviewroutes);
 app.use('/api/booking', bookingRoutes);
 app.use('/api/provider', provideroutes);
