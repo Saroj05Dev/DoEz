@@ -1,11 +1,11 @@
 const {
   updateUserById,
-  findUserById,
+  findUserById,getAllProviders
 } = require("../repositories/userRepository");
 const mongoose = require("mongoose");
 const cloudinary = require("../config/cloudinaryConfig");
 const fs = require("fs");
-
+const User = require("../schema/userSchema");
 async function onboardProvider(userId, data) {
   return await updateUserById(userId, {
     role: "provider",
@@ -82,6 +82,35 @@ async function handleKycUpload(userId, files) {
   return updatedProvider;
 }
 
+
+// only for admins
+async function listAllProviders() {
+  return await getAllProviders();
+}
+// admin create provider
+async function createProvider(data) {
+  return await User.create({
+    ...data,
+    role: "provider",
+    availability: "offline",
+  });
+}
+
+// admin update provider
+async function adminUpdateProvider(id, data) {
+  return await updateUserById(id, data);
+}
+
+// admin delete provider
+async function deleteProvider(id) {
+  const user = await findUserById(id);
+  if (!user || user.role !== "provider") {
+    throw { reason: "Provider not found", statusCode: 404 };
+  }
+  return await User.findByIdAndDelete(id);
+}
+
+
 module.exports = {
   onboardProvider,
   getProviderProfile,
@@ -89,4 +118,8 @@ module.exports = {
   toggleAvailability,
   getEarnings,
   handleKycUpload,
+  listAllProviders, 
+  createProvider,
+  adminUpdateProvider,
+  deleteProvider,
 };

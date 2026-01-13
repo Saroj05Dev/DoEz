@@ -22,11 +22,14 @@ async function createUser(data) {
 async function getAllUsers() {
   return User.find().select("-password");
 }
-
+async function getAllProviders() {
+  return User.find({ role: "provider" }).select("-password");
+}
 module.exports = {
   findUser,
   findUserById,
   updateUserById,
   createUser,
   getAllUsers,
+   getAllProviders,
 };
