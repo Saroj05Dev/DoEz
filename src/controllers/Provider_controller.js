@@ -5,7 +5,8 @@ const {
   updateProviderProfile,
   toggleAvailability,
   getEarnings,
-  handleKycUpload,
+  handleKycUpload,listAllProviders,createProvider,adminUpdateProvider,
+  deleteProvider,
 } = require("../services/Provider_service");
 
 async function onboard(req, res) {
@@ -94,11 +95,57 @@ async function uploadKycDocs(req, res) {
   }
 }
 
+
+// only for admins
+async function getAllProviders(req, res) {
+  try {
+    const providers = await listAllProviders();
+    return res.status(200).json({
+      success: true,
+      data: providers,
+    });
+  } catch (e) {
+    return res
+      .status(500)
+      .json({ success: false, error: e.message });
+  }
+}
+async function adminCreateProvider(req, res) {
+  try {
+    const provider = await createProvider(req.body);
+    res.status(201).json({ success: true, data: provider });
+  } catch (e) {
+    res.status(500).json({ success: false, error: e.reason });
+  }
+}
+
+async function adminUpdate(req, res) {
+  try {
+    const provider = await adminUpdateProvider(req.params.id, req.body);
+    res.status(200).json({ success: true, data: provider });
+  } catch (e) {
+    res.status(e.statusCode || 500).json({ success: false, error: e.reason });
+  }
+}
+
+async function adminDelete(req, res) {
+  try {
+    await deleteProvider(req.params.id);
+    res.status(200).json({ success: true, message: "Provider deleted" });
+  } catch (e) {
+    res.status(e.statusCode || 500).json({ success: false, error: e.reason });
+  }
+}
+
+
 module.exports = { 
   onboard, 
   getProfile, 
   updateProfile, 
   toggleAvail, 
   getEarn,
-  uploadKycDocs
+  uploadKycDocs,
+  getAllProviders, adminCreateProvider,
+  adminUpdate,
+  adminDelete,
 };

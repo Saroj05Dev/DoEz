@@ -5,7 +5,7 @@ const {
   updateProfile,
   toggleAvail,
   getEarn,
-  uploadKycDocs,
+  uploadKycDocs, getAllProviders, adminCreateProvider,adminDelete,adminUpdate
 } = require("../controllers/Provider_controller");
 const {
   isAuthenticated,
@@ -38,5 +38,28 @@ router.post(
     upload.array('kycDocs', 3),
     uploadKycDocs
 )
+router.get("/all", getAllProviders);
+
+
+router.post(
+  "/admin",
+  isAuthenticated,
+  isAuthorized(["admin"]),
+  adminCreateProvider
+);
+
+router.put(
+  "/admin/:id",
+  isAuthenticated,
+  isAuthorized(["admin"]),
+  adminUpdate
+);
+
+router.delete(
+  "/admin/:id",
+  isAuthenticated,
+  isAuthorized(["admin"]),
+  adminDelete
+);
 
 module.exports = router;
