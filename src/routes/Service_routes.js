@@ -7,7 +7,7 @@ const { isAuthenticated, isAuthorized } = require('../middlewares/authMiddleware
 router.post('/', isAuthenticated, isAuthorized(['admin']), serviceController.createService);
 
 // Get all services
-router.get('/', isAuthenticated, serviceController.getAllServices);
+router.get('/', serviceController.getAllServices);
 
 // Get a specific service by ID
 router.get('/:id', isAuthenticated, serviceController.getServiceById);

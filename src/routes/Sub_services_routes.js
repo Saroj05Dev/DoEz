@@ -4,7 +4,7 @@ const subServiceController = require('../controllers/Sub_services_controler');
 const { isAuthenticated, isAuthorized } = require('../middlewares/authMiddleware');
 
 router.post('/', isAuthenticated, isAuthorized(['admin']), subServiceController.createSubService);
-router.get('/getall', isAuthenticated, subServiceController.getAllSubServices); 
+router.get('/getall', subServiceController.getAllSubServices); 
 router.get('/service/:serviceId', isAuthenticated, subServiceController.getSubServicesByServiceId);
 router.get('/:id', isAuthenticated, subServiceController.getSubServiceById);
 router.put('/:id', isAuthenticated, isAuthorized(['admin']), subServiceController.updateSubService);
