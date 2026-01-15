@@ -20,8 +20,8 @@ const app = express();
 
 
 app.use(cors({
-  origin: 'http://localhost:5173',  
-  credentials: true                 
+origin: 'http://localhost:5173',  
+credentials: true                 
 }));
 
 app.use(express.json());
@@ -39,8 +39,10 @@ app.use('/api/sub-services3', subService3Routes);
 app.use('/api/reviews', reviewroutes);
 app.use('/api/booking', bookingRoutes);
 app.use('/api/provider', provideroutes);
+app.use('/api/admin', adminRouter);
+
 
 app.listen(ServerConfig.PORT, async () => {
-    await connectDB();
-    console.log(`Server started at port ${ServerConfig.PORT}...!!`);
+  await connectDB();
+  console.log(`Server started at port ${ServerConfig.PORT}...!!`);
 });
