@@ -44,7 +44,6 @@ async function registerUser(userDetails) {
     };
   }
 
-  // OTP MUST BE VERIFIED (means OTP doc must be deleted)
   const otpStillExists = await findOtp(phone);
   if (otpStillExists) {
     throw {
