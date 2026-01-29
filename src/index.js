@@ -1,6 +1,9 @@
 const express = require('express');
 const cookieParser = require('cookie-parser');
-const cors = require('cors'); 
+const cors = require('cors');
+// import { v2 as cloudinary } from 'cloudinary';
+const path = require("path");
+
 
 const ServerConfig = require('./config/serverConfig');
 const connectDB = require('./config/dbConfig');
@@ -20,8 +23,8 @@ const app = express();
 
 
 app.use(cors({
-origin: 'http://localhost:5173',  
-credentials: true                 
+  origin: 'http://localhost:5173',
+  credentials: true
 }));
 
 app.use(express.json());
@@ -40,6 +43,7 @@ app.use('/api/reviews', reviewroutes);
 app.use('/api/booking', bookingRoutes);
 app.use('/api/provider', provideroutes);
 app.use('/api/admin', adminRouter);
+app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 
 
 app.listen(ServerConfig.PORT, async () => {

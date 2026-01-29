@@ -3,6 +3,9 @@ const SubService3Repository = require("../repositories/Sub_service3_repository")
 async function createSubService3(data) {
   const {
     subService3Name,
+    image,
+    price,
+    description,
     serviceId,
     subServiceId,
     subService1Id,
@@ -11,12 +14,19 @@ async function createSubService3(data) {
 
   if (
     !subService3Name ||
+    !image ||
+    price === undefined ||
+    !description ||
     !serviceId ||
     !subServiceId ||
     !subService1Id ||
     !subService2Id
   ) {
     throw new Error("All fields are required");
+  }
+
+  if (typeof price !== "number") {
+    throw new Error("Price must be a number");
   }
 
   return await SubService3Repository.createSubService3(data);

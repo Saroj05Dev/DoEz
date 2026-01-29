@@ -1,13 +1,36 @@
 const SubService3Service = require("../services/SubService3_service");
+const multer = require("multer");
+const path = require("path");
+
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, "uploads/"); 
+  },
+  filename: function (req, file, cb) {
+    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
+    cb(null, uniqueSuffix + path.extname(file.originalname));
+  },
+});
+
+const upload = multer({ storage: storage });
 
 async function createSubService3(req, res) {
   try {
+    if (req.file) {
+      req.body.image = req.file.path;
+    }
+
+    if (req.body.price) {
+      req.body.price = Number(req.body.price);
+    }
+
     const data = await SubService3Service.createSubService3(req.body);
     return res.status(201).json({ success: true, data });
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });
   }
 }
+
 
 async function getAllSubService3(req, res) {
   try {
@@ -38,6 +61,10 @@ async function getSubService3ByServiceId(req, res) {
 
 async function updateSubService3(req, res) {
   try {
+    if (req.file) {
+      req.body.image = req.file.path;
+    }
+
     const data = await SubService3Service.updateSubService3(
       req.params.id,
       req.body
@@ -59,6 +86,7 @@ async function deleteSubService3(req, res) {
 
 module.exports = {
   createSubService3,
+  upload,
   getAllSubService3,
   getSubService3ById,
   getSubService3ByServiceId,
