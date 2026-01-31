@@ -5,7 +5,7 @@ const {
   updateProfile,
   toggleAvail,
   getEarn,
-  uploadKycDocs, getAllProviders, adminCreateProvider,adminDelete,adminUpdate
+  uploadKycDocs, submitKyc, getAllProviders, adminCreateProvider, adminDelete, adminUpdate, adminApproveKyc
 } = require("../controllers/Provider_controller");
 const {
   isAuthenticated,
@@ -32,12 +32,17 @@ router.put(
 router.get("/earnings", isAuthenticated, isAuthorized(["provider"]), getEarn);
 
 router.post(
-    '/upload-kyc',
-    isAuthenticated,
-    isAuthorized(['provider']),
-    upload.array('kycDocs', 3),
-    uploadKycDocs
-)
+  "/submit-kyc",
+  isAuthenticated,
+  isAuthorized(["provider"]),
+  upload.fields([
+    { name: "aadharFile", maxCount: 1 },
+    { name: "panFile", maxCount: 1 },
+    { name: "passbookImage", maxCount: 1 },
+  ]),
+  submitKyc
+);
+
 router.get("/all", getAllProviders);
 
 
@@ -60,6 +65,13 @@ router.delete(
   isAuthenticated,
   isAuthorized(["admin"]),
   adminDelete
+);
+
+router.put(
+  "/admin/:id/kyc",
+  isAuthenticated,
+  isAuthorized(["admin"]),
+  adminApproveKyc
 );
 
 module.exports = router;
