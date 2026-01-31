@@ -5,8 +5,8 @@ const {
   updateProviderProfile,
   toggleAvailability,
   getEarnings,
-  handleKycUpload,listAllProviders,createProvider,adminUpdateProvider,
-  deleteProvider,
+  handleKycUpload, submitFullKyc, listAllProviders, createProvider, adminUpdateProvider,
+  deleteProvider, approveKyc,
 } = require("../services/Provider_service");
 
 async function onboard(req, res) {
@@ -137,15 +137,43 @@ async function adminDelete(req, res) {
   }
 }
 
+async function adminApproveKyc(req, res) {
+  try {
+    const { status } = req.body;
+    const provider = await approveKyc(req.params.id, status);
+    res.status(200).json({ success: true, data: provider });
+  } catch (e) {
+    res.status(e.statusCode || 500).json({ success: false, error: e.reason });
+  }
+}
 
-module.exports = { 
-  onboard, 
-  getProfile, 
-  updateProfile, 
-  toggleAvail, 
+
+async function submitKyc(req, res) {
+  try {
+    const result = await submitFullKyc(req.user.id, req.body, req.files);
+    return res.status(200).json({
+      success: true,
+      message: "KYC details submitted successfully",
+      data: result,
+    });
+  } catch (e) {
+    console.error("Submit KYC Error:", e);
+    return res
+      .status(e.statusCode || 500)
+      .json({ success: false, error: e.reason || "Submission failed" });
+  }
+}
+
+module.exports = {
+  onboard,
+  getProfile,
+  updateProfile,
+  toggleAvail,
   getEarn,
   uploadKycDocs,
+  submitKyc,
   getAllProviders, adminCreateProvider,
   adminUpdate,
   adminDelete,
+  adminApproveKyc,
 };

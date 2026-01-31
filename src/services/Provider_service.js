@@ -1,6 +1,6 @@
 const {
   updateUserById,
-  findUserById,getAllProviders
+  findUserById, getAllProviders
 } = require("../repositories/userRepository");
 const mongoose = require("mongoose");
 const cloudinary = require("../config/cloudinaryConfig");
@@ -25,7 +25,7 @@ async function getProviderProfile(id) {
 }
 
 async function updateProviderProfile(id, data) {
-  const allowed = ["rates", "workArea", "experienceYears"];
+  const allowed = ["rates", "workArea", "experienceYears", "aadharNumber", "panNumber", "bankDetails"];
   const updates = {};
   allowed.forEach((k) => {
     if (data[k] !== undefined) updates[k] = data[k];
@@ -111,6 +111,92 @@ async function deleteProvider(id) {
 }
 
 
+async function submitFullKyc(userId, data, files) {
+  const provider = await findUserById(userId);
+  if (!provider) throw { reason: "Provider not found", statusCode: 404 };
+
+  const updates = {
+    aadharNumber: data.aadharNumber,
+    panNumber: data.panNumber,
+    bankDetails: {
+      accountNumber: data.accountNumber,
+      ifscCode: data.ifscCode,
+    },
+    kycStatus: "pending",
+  };
+
+  // Handle file uploads to Cloudinary with local fallback
+  if (files.aadharFile && files.aadharFile[0]) {
+    try {
+      const res = await cloudinary.uploader.upload(files.aadharFile[0].path, {
+        folder: "fixerly/kyc_docs",
+      });
+      updates.aadharFile = res.secure_url;
+      // Delete local file after successful upload to Cloudinary
+      fs.unlinkSync(files.aadharFile[0].path);
+    } catch (err) {
+      console.error("Aadhar file upload to Cloudinary failed:", err.message);
+      // Use local file URL as fallback
+      const filename = files.aadharFile[0].filename;
+      updates.aadharFile = `/uploads/${filename}`;
+      console.log("Using local file URL:", updates.aadharFile);
+    }
+  }
+
+  if (files.panFile && files.panFile[0]) {
+    try {
+      const res = await cloudinary.uploader.upload(files.panFile[0].path, {
+        folder: "fixerly/kyc_docs",
+      });
+      updates.panFile = res.secure_url;
+      // Delete local file after successful upload to Cloudinary
+      fs.unlinkSync(files.panFile[0].path);
+    } catch (err) {
+      console.error("PAN file upload to Cloudinary failed:", err.message);
+      // Use local file URL as fallback
+      const filename = files.panFile[0].filename;
+      updates.panFile = `/uploads/${filename}`;
+      console.log("Using local file URL:", updates.panFile);
+    }
+  }
+
+  if (files.passbookImage && files.passbookImage[0]) {
+    try {
+      const res = await cloudinary.uploader.upload(files.passbookImage[0].path, {
+        folder: "fixerly/kyc_docs",
+      });
+      updates["bankDetails.passbookImage"] = res.secure_url;
+      // Delete local file after successful upload to Cloudinary
+      fs.unlinkSync(files.passbookImage[0].path);
+    } catch (err) {
+      console.error("Passbook image upload to Cloudinary failed:", err.message);
+      // Use local file URL as fallback
+      const filename = files.passbookImage[0].filename;
+      updates["bankDetails.passbookImage"] = `/uploads/${filename}`;
+      console.log("Using local file URL:", updates["bankDetails.passbookImage"]);
+    }
+  }
+
+  // Use a special way to update nested bankDetails or just overwrite it
+  // Since we are setting all bankDetails, we can just do:
+  updates.bankDetails = {
+    accountNumber: data.accountNumber,
+    ifscCode: data.ifscCode,
+    passbookImage: updates["bankDetails.passbookImage"] || provider.bankDetails?.passbookImage,
+  };
+  delete updates["bankDetails.passbookImage"];
+
+  return await updateUserById(userId, updates);
+}
+
+// admin approve/reject kyc
+async function approveKyc(id, status) {
+  if (!["approved", "rejected", "pending"].includes(status)) {
+    throw { reason: "Invalid KYC status", statusCode: 400 };
+  }
+  return await updateUserById(id, { kycStatus: status });
+}
+
 module.exports = {
   onboardProvider,
   getProviderProfile,
@@ -118,8 +204,10 @@ module.exports = {
   toggleAvailability,
   getEarnings,
   handleKycUpload,
-  listAllProviders, 
+  submitFullKyc,
+  listAllProviders,
   createProvider,
   adminUpdateProvider,
   deleteProvider,
+  approveKyc,
 };
