@@ -6,6 +6,8 @@ const mongoose = require("mongoose");
 const cloudinary = require("../config/cloudinaryConfig");
 const fs = require("fs");
 const User = require("../schema/userSchema");
+const Service = require("../schema/Service_schema");
+const SubService = require("../schema/Subservice_schema");
 async function onboardProvider(userId, data) {
   return await updateUserById(userId, {
     role: "provider",
@@ -18,7 +20,10 @@ async function onboardProvider(userId, data) {
 }
 
 async function getProviderProfile(id) {
-  const user = await findUserById(id);
+  const user = await User.findById(id)
+    .select("-password")
+    .populate("providerServices.serviceId")
+    .populate("providerServices.subServiceId");
   if (!user || user.role !== "provider")
     throw { reason: "Provider not found", statusCode: 404 };
   return user;
@@ -85,7 +90,10 @@ async function handleKycUpload(userId, files) {
 
 // only for admins
 async function listAllProviders() {
-  return await getAllProviders();
+  return await User.find({ role: "provider" })
+    .select("-password")
+    .populate("providerServices.serviceId")
+    .populate("providerServices.subServiceId");
 }
 // admin create provider
 async function createProvider(data) {
@@ -197,6 +205,38 @@ async function approveKyc(id, status) {
   return await updateUserById(id, { kycStatus: status });
 }
 
+// Update provider services
+async function updateProviderServices(userId, data) {
+  const provider = await findUserById(userId);
+  if (!provider) throw { reason: "Provider not found", statusCode: 404 };
+
+  const updates = {
+    providerServices: data.services,
+  };
+
+  if (data.workArea) updates.workArea = data.workArea;
+  if (data.experienceYears) updates.experienceYears = data.experienceYears;
+
+  return await updateUserById(userId, updates);
+}
+
+const SubService3 = require("../schema/Sub_service3_schema");
+
+// Get providers by specific service ID (SubService3)
+async function getProvidersByServiceId(subService3Id) {
+  // First, find the subService3 to get its parent subServiceId
+  const subService3 = await SubService3.findById(subService3Id);
+  if (!subService3) return [];
+
+  const targetSubServiceId = subService3.subServiceId;
+
+  return await User.find({
+    role: "provider",
+    kycStatus: "approved", // Only show approved providers
+    "providerServices.subServiceId": targetSubServiceId,
+  }).select("name rates experienceYears workArea providerServices");
+}
+
 module.exports = {
   onboardProvider,
   getProviderProfile,
@@ -210,4 +250,6 @@ module.exports = {
   adminUpdateProvider,
   deleteProvider,
   approveKyc,
+  updateProviderServices,
+  getProvidersByServiceId,
 };

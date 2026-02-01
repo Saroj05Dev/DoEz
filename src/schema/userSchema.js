@@ -65,6 +65,32 @@ const userSchema = new mongoose.Schema(
       default: "offline",
     },
     kycDocs: [String],
+    providerServices: [
+      {
+        serviceId: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "Service",
+        },
+        subServiceId: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "SubService",
+        },
+        subService1Id: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "SubService1",
+        },
+        subService2Id: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "SubService2",
+        },
+        subService3Ids: [
+          {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "SubService3",
+          },
+        ],
+      },
+    ],
   },
   { timestamps: true }
 );

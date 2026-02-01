@@ -5,8 +5,10 @@ const {
   updateProfile,
   toggleAvail,
   getEarn,
-  uploadKycDocs, submitKyc, getAllProviders, adminCreateProvider, adminDelete, adminUpdate, adminApproveKyc
+  uploadKycDocs, submitKyc, getAllProviders, adminCreateProvider, adminDelete, adminUpdate, adminApproveKyc,
+  updateServices, getProvidersByService
 } = require("../controllers/Provider_controller");
+
 const {
   isAuthenticated,
   isAuthorized,
@@ -30,6 +32,17 @@ router.put(
   toggleAvail
 );
 router.get("/earnings", isAuthenticated, isAuthorized(["provider"]), getEarn);
+
+// Update provider services
+router.put(
+  "/services",
+  isAuthenticated,
+  isAuthorized(["provider"]),
+  updateServices
+);
+
+// Get providers by service ID (Public or Customer/Admin)
+router.get("/by-service/:subService3Id", getProvidersByService);
 
 router.post(
   "/submit-kyc",
