@@ -5,10 +5,17 @@ async function findBookingById(id) {
 }
 async function getCustomerBookings(id) {
   return await Booking.find({ customer_id: id })
-    .populate("provider_id", "name phone rates, workArea")
+    .populate({
+      path: "provider_id",
+      select: "name phone rates workArea providerServices",
+      populate: [
+        { path: "providerServices.serviceId", select: "name" },
+        { path: "providerServices.subServiceId", select: "name" },
+      ],
+    })
     .populate("service_id", "name description")
     .populate("customer_id", "name phone")
-    .sort({ date: -1 });
+    .sort({ createdAt: -1 });
 }
 async function getProviderBookings(id) {
   return await Booking.find({ provider_id: id })

@@ -6,8 +6,24 @@ const {
   toggleAvailability,
   getEarnings,
   handleKycUpload, submitFullKyc, listAllProviders, createProvider, adminUpdateProvider,
-  deleteProvider, approveKyc,
+  deleteProvider, approveKyc, updateProviderServices, getProvidersByServiceId
 } = require("../services/Provider_service");
+
+async function submitKyc(req, res) {
+  try {
+    const result = await submitFullKyc(req.user.id, req.body, req.files);
+    return res.status(200).json({
+      success: true,
+      message: "KYC details submitted successfully",
+      data: result,
+    });
+  } catch (e) {
+    console.error("Submit KYC Error:", e);
+    return res
+      .status(e.statusCode || 500)
+      .json({ success: false, error: e.reason || "Submission failed" });
+  }
+}
 
 async function onboard(req, res) {
   try {
@@ -148,19 +164,35 @@ async function adminApproveKyc(req, res) {
 }
 
 
-async function submitKyc(req, res) {
+async function updateServices(req, res) {
   try {
-    const result = await submitFullKyc(req.user.id, req.body, req.files);
+    const result = await updateProviderServices(req.user.id, req.body);
     return res.status(200).json({
       success: true,
-      message: "KYC details submitted successfully",
+      message: "Services updated successfully",
       data: result,
     });
   } catch (e) {
-    console.error("Submit KYC Error:", e);
+    console.error("Update Services Error:", e);
     return res
       .status(e.statusCode || 500)
-      .json({ success: false, error: e.reason || "Submission failed" });
+      .json({ success: false, error: e.reason || "Update failed" });
+  }
+}
+
+async function getProvidersByService(req, res) {
+  try {
+    const { subService3Id } = req.params;
+    const providers = await getProvidersByServiceId(subService3Id);
+    return res.status(200).json({
+      success: true,
+      data: providers,
+    });
+  } catch (e) {
+    console.error("Get Providers Error:", e);
+    return res
+      .status(e.statusCode || 500)
+      .json({ success: false, error: e.reason || "Fetch failed" });
   }
 }
 
@@ -172,8 +204,11 @@ module.exports = {
   getEarn,
   uploadKycDocs,
   submitKyc,
-  getAllProviders, adminCreateProvider,
+  getAllProviders,
+  adminCreateProvider,
   adminUpdate,
   adminDelete,
   adminApproveKyc,
+  updateServices,
+  getProvidersByService,
 };
