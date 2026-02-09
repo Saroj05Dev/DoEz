@@ -1,4 +1,9 @@
 const Booking = require("../schema/booking_schema");
+require("../schema/Service_schema");
+require("../schema/Subservice_schema");
+require("../schema/Sub_services1_schema");
+require("../schema/Sub_service2_schema");
+require("../schema/Sub_service3_schema");
 
 async function findBookingById(id) {
   return await Booking.findById(id);
@@ -13,19 +18,46 @@ async function getCustomerBookings(id) {
         { path: "providerServices.subServiceId", select: "name" },
       ],
     })
-    .populate("service_id", "name description")
+    .populate({
+      path: "service_id",
+      populate: [
+        { path: "serviceId", select: "name" },
+        { path: "subServiceId", select: "name" },
+        { path: "subService1Id", select: "name" },
+        { path: "subService2Id", select: "name" },
+      ]
+    })
     .populate("customer_id", "name phone")
     .sort({ createdAt: -1 });
 }
 async function getProviderBookings(id) {
   return await Booking.find({ provider_id: id })
     .populate("customer_id", "name phone")
-    .populate("service_id", "name description")
-    .populate("provider_id", "name phone rates, workArea")
-    .sort({ date: -1 });
+    .populate({
+      path: "service_id",
+      populate: [
+        { path: "serviceId", select: "name" },
+        { path: "subServiceId", select: "name" },
+        { path: "subService1Id", select: "name" },
+        { path: "subService2Id", select: "name" },
+      ],
+    })
+    .populate("provider_id", "name phone rates workArea")
+    .sort({ createdAt: -1 });
 }
 async function updateBookingStatus(id, status) {
-  return await Booking.findByIdAndUpdate(id, { status }, { new: true });
+  return await Booking.findByIdAndUpdate(id, { status }, { new: true })
+    .populate("customer_id", "name phone")
+    .populate({
+      path: "service_id",
+      populate: [
+        { path: "serviceId", select: "name" },
+        { path: "subServiceId", select: "name" },
+        { path: "subService1Id", select: "name" },
+        { path: "subService2Id", select: "name" },
+      ],
+    })
+    .populate("provider_id", "name phone rates workArea");
 }
 async function createBooking(bookingData) {
   const booking = new Booking(bookingData);
@@ -36,7 +68,15 @@ async function getAllBookings() {
   return await Booking.find({})
     .populate("customer_id", "name phone")
     .populate("provider_id", "name phone rates")
-    .populate("service_id", "name")
+    .populate({
+      path: "service_id",
+      populate: [
+        { path: "serviceId", select: "name" },
+        { path: "subServiceId", select: "name" },
+        { path: "subService1Id", select: "name" },
+        { path: "subService2Id", select: "name" },
+      ]
+    })
     .sort({ date: -1 });
 }
 module.exports = {
