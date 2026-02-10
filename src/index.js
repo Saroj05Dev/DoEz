@@ -18,9 +18,60 @@ const adminRouter = require('./routes/admin_routes');
 const authRouter = require('./routes/authRoutes');
 const provideroutes = require('./routes/Provider_routes');
 const reviewroutes = require('./routes/review_routes');
+const notificationRoutes = require('./routes/notification_routes');
+
+
+const http = require('http');
+const { Server } = require('socket.io');
 
 const app = express();
+const server = http.createServer(app);
+const io = new Server(server, {
+  cors: {
+    origin: 'http://localhost:5173',
+    credentials: true
+  }
+});
 
+// Socket.io Map to track users
+const userSockets = new Map();
+
+io.on('connection', (socket) => {
+  console.log('User connected:', socket.id);
+
+  socket.on('join', (userId) => {
+    userSockets.set(userId, socket.id);
+    socket.join(`user_${userId}`);
+    console.log(`User ${userId} joined room user_${userId}`);
+  });
+
+  socket.on('updateLocation', (data) => {
+    // data: { userId, role, lat, lng, bookingId, targetId }
+    const { userId, role, lat, lng, bookingId, targetId } = data;
+
+    // Broadcast to the specifically targeted user (the other party in the booking)
+    if (targetId) {
+      io.to(`user_${targetId}`).emit('locationUpdated', {
+        userId,
+        role,
+        lat,
+        lng,
+        bookingId
+      });
+    }
+  });
+
+  socket.on('disconnect', () => {
+    // Find and remove the user from mapping
+    for (let [userId, socketId] of userSockets.entries()) {
+      if (socketId === socket.id) {
+        userSockets.delete(userId);
+        break;
+      }
+    }
+    console.log('User disconnected');
+  });
+});
 
 app.use(cors({
   origin: 'http://localhost:5173',
@@ -43,10 +94,10 @@ app.use('/api/reviews', reviewroutes);
 app.use('/api/booking', bookingRoutes);
 app.use('/api/provider', provideroutes);
 app.use('/api/admin', adminRouter);
+app.use('/api/notifications', notificationRoutes);
 app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 
-
-app.listen(ServerConfig.PORT, async () => {
+server.listen(ServerConfig.PORT, async () => {
   await connectDB();
   console.log(`Server started at port ${ServerConfig.PORT}...!!`);
 });

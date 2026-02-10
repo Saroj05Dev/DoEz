@@ -65,6 +65,14 @@ const userSchema = new mongoose.Schema(
       default: "offline",
     },
     kycDocs: [String],
+    currentLat: {
+      type: Number,
+      default: null,
+    },
+    currentLong: {
+      type: Number,
+      default: null,
+    },
     providerServices: [
       {
         serviceId: {

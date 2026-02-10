@@ -6,6 +6,7 @@ const {
   createBooking,
   getAllBookings,
 } = require("../repositories/booking_repositories");
+const notificationService = require("./notification_service");
 
 async function getCustomerBookingsService(id) {
   return await getCustomerBookings(id);
@@ -20,7 +21,9 @@ async function cancelBookingService(bookingId, userId) {
     throw { reason: "Unauthorized", statusCode: 403 };
   if (booking.status === "Cancelled")
     throw { reason: "Already cancelled", statusCode: 400 };
-  return await updateBookingStatus(bookingId, "Cancelled");
+  const updatedBooking = await updateBookingStatus(bookingId, "Cancelled");
+  await notificationService.notifyBookingStatusUpdate(booking, booking.provider_id, "Cancelled");
+  return updatedBooking;
 }
 
 async function updateBookingStatusService(bookingId, providerId, status) {
@@ -34,7 +37,9 @@ async function updateBookingStatusService(bookingId, providerId, status) {
   };
   if (!valid[booking.status]?.includes(status))
     throw { reason: "Invalid status", statusCode: 400 };
-  return await updateBookingStatus(bookingId, status);
+  const updatedBooking = await updateBookingStatus(bookingId, status);
+  await notificationService.notifyBookingStatusUpdate(booking, booking.customer_id, status);
+  return updatedBooking;
 }
 
 async function createBookingService(userId, payload) {
@@ -56,7 +61,9 @@ async function createBookingService(userId, payload) {
     // status & date are set by schema defaults
   };
 
-  return await createBooking(bookingData);
+  const booking = await createBooking(bookingData);
+  await notificationService.notifyNewBooking(booking, provider_id);
+  return booking;
 }
 
 async function getAllBookingsService() {
