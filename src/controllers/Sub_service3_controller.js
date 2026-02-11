@@ -1,10 +1,11 @@
 const SubService3Service = require("../services/SubService3_service");
+const { uploadToCloudinary } = require("../utils/cloudinaryUpload");
 const multer = require("multer");
 const path = require("path");
 
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    cb(null, "uploads/"); 
+    cb(null, "uploads/");
   },
   filename: function (req, file, cb) {
     const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
@@ -31,7 +32,6 @@ async function createSubService3(req, res) {
   }
 }
 
-
 async function getAllSubService3(req, res) {
   try {
     const data = await SubService3Service.getAllSubService3();
@@ -52,7 +52,9 @@ async function getSubService3ById(req, res) {
 
 async function getSubService3ByServiceId(req, res) {
   try {
-    const data = await SubService3Service.getSubService3ByServiceId(req.params.serviceId);
+    const data = await SubService3Service.getSubService3ByServiceId(
+      req.params.serviceId,
+    );
     return res.status(200).json({ success: true, data });
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });
@@ -67,7 +69,7 @@ async function updateSubService3(req, res) {
 
     const data = await SubService3Service.updateSubService3(
       req.params.id,
-      req.body
+      req.body,
     );
     return res.status(200).json({ success: true, data });
   } catch (error) {

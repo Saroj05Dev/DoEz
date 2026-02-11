@@ -1,9 +1,10 @@
 const {
   updateUserById,
-  findUserById, getAllProviders
+  findUserById,
+  getAllProviders,
 } = require("../repositories/userRepository");
 const mongoose = require("mongoose");
-const cloudinary = require("../config/cloudinaryConfig");
+const { uploadToCloudinary } = require("../utils/cloudinaryUpload");
 const fs = require("fs");
 const User = require("../schema/userSchema");
 const Service = require("../schema/Service_schema");
@@ -30,7 +31,14 @@ async function getProviderProfile(id) {
 }
 
 async function updateProviderProfile(id, data) {
-  const allowed = ["rates", "workArea", "experienceYears", "aadharNumber", "panNumber", "bankDetails"];
+  const allowed = [
+    "rates",
+    "workArea",
+    "experienceYears",
+    "aadharNumber",
+    "panNumber",
+    "bankDetails",
+  ];
   const updates = {};
   allowed.forEach((k) => {
     if (data[k] !== undefined) updates[k] = data[k];
@@ -69,13 +77,8 @@ async function handleKycUpload(userId, files) {
   const uploadedUrls = [];
 
   for (const file of files) {
-    const result = await cloudinary.uploader.upload(file.path, {
-      folder: "fixerly/kyc_docs",
-    });
-    uploadedUrls.push(result.secure_url);
-
-    // Cleanup local file
-    fs.unlinkSync(file.path);
+    const secureUrl = await uploadToCloudinary(file.path, "fixerly/kyc_docs");
+    uploadedUrls.push(secureUrl);
   }
 
   // Merge existing docs + set status
@@ -86,7 +89,6 @@ async function handleKycUpload(userId, files) {
 
   return updatedProvider;
 }
-
 
 // only for admins
 async function listAllProviders() {
@@ -118,7 +120,6 @@ async function deleteProvider(id) {
   return await User.findByIdAndDelete(id);
 }
 
-
 async function submitFullKyc(userId, data, files) {
   const provider = await findUserById(userId);
   if (!provider) throw { reason: "Provider not found", statusCode: 404 };
@@ -136,12 +137,10 @@ async function submitFullKyc(userId, data, files) {
   // Handle file uploads to Cloudinary with local fallback
   if (files.aadharFile && files.aadharFile[0]) {
     try {
-      const res = await cloudinary.uploader.upload(files.aadharFile[0].path, {
-        folder: "fixerly/kyc_docs",
-      });
-      updates.aadharFile = res.secure_url;
-      // Delete local file after successful upload to Cloudinary
-      fs.unlinkSync(files.aadharFile[0].path);
+      updates.aadharFile = await uploadToCloudinary(
+        files.aadharFile[0].path,
+        "fixerly/kyc_docs",
+      );
     } catch (err) {
       console.error("Aadhar file upload to Cloudinary failed:", err.message);
       // Use local file URL as fallback
@@ -153,12 +152,10 @@ async function submitFullKyc(userId, data, files) {
 
   if (files.panFile && files.panFile[0]) {
     try {
-      const res = await cloudinary.uploader.upload(files.panFile[0].path, {
-        folder: "fixerly/kyc_docs",
-      });
-      updates.panFile = res.secure_url;
-      // Delete local file after successful upload to Cloudinary
-      fs.unlinkSync(files.panFile[0].path);
+      updates.panFile = await uploadToCloudinary(
+        files.panFile[0].path,
+        "fixerly/kyc_docs",
+      );
     } catch (err) {
       console.error("PAN file upload to Cloudinary failed:", err.message);
       // Use local file URL as fallback
@@ -170,18 +167,19 @@ async function submitFullKyc(userId, data, files) {
 
   if (files.passbookImage && files.passbookImage[0]) {
     try {
-      const res = await cloudinary.uploader.upload(files.passbookImage[0].path, {
-        folder: "fixerly/kyc_docs",
-      });
-      updates["bankDetails.passbookImage"] = res.secure_url;
-      // Delete local file after successful upload to Cloudinary
-      fs.unlinkSync(files.passbookImage[0].path);
+      updates["bankDetails.passbookImage"] = await uploadToCloudinary(
+        files.passbookImage[0].path,
+        "fixerly/kyc_docs",
+      );
     } catch (err) {
       console.error("Passbook image upload to Cloudinary failed:", err.message);
       // Use local file URL as fallback
       const filename = files.passbookImage[0].filename;
       updates["bankDetails.passbookImage"] = `/uploads/${filename}`;
-      console.log("Using local file URL:", updates["bankDetails.passbookImage"]);
+      console.log(
+        "Using local file URL:",
+        updates["bankDetails.passbookImage"],
+      );
     }
   }
 
@@ -190,7 +188,9 @@ async function submitFullKyc(userId, data, files) {
   updates.bankDetails = {
     accountNumber: data.accountNumber,
     ifscCode: data.ifscCode,
-    passbookImage: updates["bankDetails.passbookImage"] || provider.bankDetails?.passbookImage,
+    passbookImage:
+      updates["bankDetails.passbookImage"] ||
+      provider.bankDetails?.passbookImage,
   };
   delete updates["bankDetails.passbookImage"];
 

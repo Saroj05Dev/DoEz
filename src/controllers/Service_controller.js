@@ -1,4 +1,5 @@
 const ServiceService = require("../services/Service_services");
+const { uploadToCloudinary } = require("../utils/cloudinaryUpload");
 const multer = require("multer");
 const path = require("path");
 
@@ -17,7 +18,11 @@ const upload = multer({ storage });
 async function createService(req, res) {
   try {
     if (req.file) {
-      req.body.image = `uploads/${req.file.filename}`;
+      const imageUrl = await uploadToCloudinary(
+        req.file.path,
+        "fixerly/services",
+      );
+      req.body.image = imageUrl;
     }
 
     req.body.price = Number(req.body.price);
@@ -72,7 +77,11 @@ async function updateService(req, res) {
     const { id } = req.params;
 
     if (req.file) {
-      req.body.image = `uploads/${req.file.filename}`;
+      const imageUrl = await uploadToCloudinary(
+        req.file.path,
+        "fixerly/services",
+      );
+      req.body.image = imageUrl;
     }
 
     if (req.body.price) {
