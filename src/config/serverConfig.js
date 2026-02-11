@@ -13,4 +13,6 @@ module.exports = {
   CLOUDINARY_API_KEY: process.env.CLOUDINARY_API_KEY,
   CLOUDINARY_API_SECRET: process.env.CLOUDINARY_API_SECRET,
   CORS_ORIGIN: process.env.CORS_ORIGIN || "http://localhost:5173",
+  RAZORPAY_KEY_ID: process.env.RAZORPAY_KEY_ID,
+  RAZORPAY_SECRET: process.env.RAZORPAY_SECRET,
 };

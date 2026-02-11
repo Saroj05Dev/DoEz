@@ -20,6 +20,7 @@ const authRouter = require("./routes/authRoutes");
 const provideroutes = require("./routes/Provider_routes");
 const reviewroutes = require("./routes/review_routes");
 const notificationRoutes = require("./routes/notification_routes");
+const paymentRoutes = require("./routes/paymentRoutes");
 
 const app = express();
 const server = http.createServer(app);
@@ -51,6 +52,7 @@ app.use("/api/booking", bookingRoutes);
 app.use("/api/provider", provideroutes);
 app.use("/api/admin", adminRouter);
 app.use("/api/notifications", notificationRoutes);
+app.use("/api/payments", paymentRoutes);
 app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 
 // Global Error Handler

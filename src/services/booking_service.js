@@ -7,6 +7,7 @@ const {
   getAllBookings,
 } = require("../repositories/booking_repositories");
 const notificationService = require("./notification_service");
+const { createRazorpayOrder } = require("./paymentService");
 
 async function getCustomerBookingsService(id) {
   return await getCustomerBookings(id);
@@ -22,7 +23,11 @@ async function cancelBookingService(bookingId, userId) {
   if (booking.status === "Cancelled")
     throw { reason: "Already cancelled", statusCode: 400 };
   const updatedBooking = await updateBookingStatus(bookingId, "Cancelled");
-  await notificationService.notifyBookingStatusUpdate(booking, booking.provider_id, "Cancelled");
+  await notificationService.notifyBookingStatusUpdate(
+    booking,
+    booking.provider_id,
+    "Cancelled",
+  );
   return updatedBooking;
 }
 
@@ -38,7 +43,11 @@ async function updateBookingStatusService(bookingId, providerId, status) {
   if (!valid[booking.status]?.includes(status))
     throw { reason: "Invalid status", statusCode: 400 };
   const updatedBooking = await updateBookingStatus(bookingId, status);
-  await notificationService.notifyBookingStatusUpdate(booking, booking.customer_id, status);
+  await notificationService.notifyBookingStatusUpdate(
+    booking,
+    booking.customer_id,
+    status,
+  );
   return updatedBooking;
 }
 
@@ -58,12 +67,28 @@ async function createBookingService(userId, payload) {
     lat: lat ?? null,
     long: long ?? null,
     amount,
-    // status & date are set by schema defaults
+    paymentStatus: "Pending",
   };
 
   const booking = await createBooking(bookingData);
-  await notificationService.notifyNewBooking(booking, provider_id);
-  return booking;
+
+  // Initiate Razorpay Order
+  try {
+    const razorpayOrder = await createRazorpayOrder(
+      amount,
+      booking._id.toString(),
+    );
+    booking.razorpayOrderId = razorpayOrder.id;
+    await booking.save();
+
+    await notificationService.notifyNewBooking(booking, provider_id);
+    return { booking, razorpayOrder };
+  } catch (error) {
+    // If Razorpay fails, we still have the booking but it's pending payment
+    console.error("Razorpay Order creation failed during booking:", error);
+    await notificationService.notifyNewBooking(booking, provider_id);
+    return { booking, razorpayOrder: null, error: "Payment initiation failed" };
+  }
 }
 
 async function getAllBookingsService() {
