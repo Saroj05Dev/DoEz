@@ -223,6 +223,7 @@ async function updateProviderServices(userId, data) {
 const SubService3 = require("../schema/Sub_service3_schema");
 
 // Get providers by specific service ID (SubService3)
+// Get providers by specific service ID (SubService3)
 async function getProvidersByServiceId(subService3Id) {
   // First, find the subService3 to get its parent subServiceId
   const subService3 = await SubService3.findById(subService3Id);
@@ -235,6 +236,22 @@ async function getProvidersByServiceId(subService3Id) {
     kycStatus: "approved", // Only show approved providers
     "providerServices.subServiceId": targetSubServiceId,
   }).select("name rates experienceYears workArea providerServices");
+}
+
+async function uploadPaymentQrCode(userId, file) {
+  const provider = await findUserById(userId);
+  if (!provider) throw { reason: "Provider not found", statusCode: 404 };
+
+  let qrUrl = "";
+  try {
+    qrUrl = await uploadToCloudinary(file.path, "fixerly/payment_qrs");
+  } catch (err) {
+    console.error("Payment QR upload to Cloudinary failed:", err.message);
+    const filename = file.filename;
+    qrUrl = `/uploads/${filename}`;
+  }
+
+  return await updateUserById(userId, { paymentQrCode: qrUrl });
 }
 
 module.exports = {
@@ -252,4 +269,5 @@ module.exports = {
   approveKyc,
   updateProviderServices,
   getProvidersByServiceId,
+  uploadPaymentQrCode,
 };

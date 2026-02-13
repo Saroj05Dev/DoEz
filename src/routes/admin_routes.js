@@ -2,8 +2,13 @@ const express = require("express");
 const router = express.Router();
 const User = require("../schema/userSchema");
 const bcrypt = require("bcrypt");
+const adminController = require("../controllers/adminController");
+const { isAuthenticated, isAuthorized } = require("../middlewares/authMiddleware");
 
 // ONLY ADMINS
+router.get("/commissions", isAuthenticated, isAuthorized(["admin"]), adminController.getCommissions);
+router.get("/commissions/:providerId", isAuthenticated, isAuthorized(["admin"]), adminController.getProviderDetails);
+
 router.get("/admins", async (req, res) => {
   try {
     const admins = await User.find({ role: "admin" }).select("-password");

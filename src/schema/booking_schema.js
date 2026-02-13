@@ -26,6 +26,12 @@ const bookingSchema = new mongoose.Schema(
     lat: Number,
     long: Number,
     amount: { type: Number, required: true, min: 0 },
+    commissionAmount: { type: Number, default: 0 },
+    commissionStatus: {
+      type: String,
+      enum: ["Pending", "Paid", "Waived"],
+      default: "Pending",
+    },
     razorpayOrderId: { type: String },
     razorpayPaymentId: { type: String },
     paymentStatus: {

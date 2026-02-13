@@ -56,6 +56,7 @@ const userSchema = new mongoose.Schema(
       ifscCode: String,
       passbookImage: String,
     },
+    paymentQrCode: String,
     rates: Number,
     workArea: String,
     experienceYears: Number,

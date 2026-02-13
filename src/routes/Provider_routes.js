@@ -6,7 +6,7 @@ const {
   toggleAvail,
   getEarn,
   uploadKycDocs, submitKyc, getAllProviders, adminCreateProvider, adminDelete, adminUpdate, adminApproveKyc,
-  updateServices, getProvidersByService
+  updateServices, getProvidersByService, uploadPaymentQr
 } = require("../controllers/Provider_controller");
 
 const {
@@ -54,6 +54,14 @@ router.post(
     { name: "passbookImage", maxCount: 1 },
   ]),
   submitKyc
+);
+
+router.post(
+  "/upload-payment-qr",
+  isAuthenticated,
+  isAuthorized(["provider"]),
+  upload.single("paymentQr"),
+  uploadPaymentQr
 );
 
 router.get("/all", getAllProviders);

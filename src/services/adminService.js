@@ -1,4 +1,4 @@
-const bcrypt = require("bcryptjs");
+const bcrypt = require("bcrypt");
 const { createAdmin, getAllAdmins, updateAdmin, deleteAdmin } = require("../repositories/adminRepository");
 const Admin = require("../schema/adminSchema");
 
@@ -37,10 +37,131 @@ async function removeAdmin(id) {
     return await deleteAdmin(id);
 }
 
+async function getCommissionStats() {
+    const Booking = require("../schema/booking_schema");
+    const User = require("../schema/userSchema");
+
+    const now = new Date();
+    const startOfToday = new Date(now.setHours(0, 0, 0, 0));
+    const startOfYesterday = new Date(startOfToday.getTime() - 24 * 60 * 60 * 1000);
+    const tenDaysAgo = new Date(startOfToday.getTime() - 9 * 24 * 60 * 60 * 1000);
+
+    // Aggregate total commission
+    const totalStats = await Booking.aggregate([
+        { $match: { status: "Completed" } },
+        {
+            $group: {
+                _id: null,
+                totalCommission: { $sum: "$commissionAmount" },
+                totalBusiness: { $sum: "$amount" },
+                jobCount: { $sum: 1 }
+            }
+        }
+    ]);
+
+    // Today's stats
+    const todayStats = await Booking.aggregate([
+        { $match: { status: "Completed", createdAt: { $gte: startOfToday } } },
+        {
+            $group: {
+                _id: null,
+                amount: { $sum: "$amount" },
+                commission: { $sum: "$commissionAmount" }
+            }
+        }
+    ]);
+
+    // Yesterday's stats
+    const yesterdayStats = await Booking.aggregate([
+        { $match: { status: "Completed", createdAt: { $gte: startOfYesterday, $lt: startOfToday } } },
+        {
+            $group: {
+                _id: null,
+                amount: { $sum: "$amount" },
+                commission: { $sum: "$commissionAmount" }
+            }
+        }
+    ]);
+
+    // Last 10 days stats
+    const tenDaysStats = await Booking.aggregate([
+        { $match: { status: "Completed", createdAt: { $gte: tenDaysAgo } } },
+        {
+            $group: {
+                _id: null,
+                amount: { $sum: "$amount" },
+                commission: { $sum: "$commissionAmount" }
+            }
+        }
+    ]);
+
+    // Aggregate by provider
+    const providerStats = await Booking.aggregate([
+        { $match: { status: "Completed" } },
+        {
+            $group: {
+                _id: "$provider_id",
+                totalCommission: { $sum: "$commissionAmount" },
+                totalBusiness: { $sum: "$amount" },
+                jobCount: { $sum: 1 }
+            }
+        },
+        { $sort: { totalCommission: -1 } }
+    ]);
+
+    // Populate provider names
+    const populatedProviderStats = await User.populate(providerStats, {
+        path: "_id",
+        select: "name email phone"
+    });
+
+    return {
+        overall: {
+            ...(totalStats[0] || { totalCommission: 0, totalBusiness: 0, jobCount: 0 }),
+            todayAmount: todayStats[0]?.amount || 0,
+            todayCommission: todayStats[0]?.commission || 0,
+            yesterdayAmount: yesterdayStats[0]?.amount || 0,
+            yesterdayCommission: yesterdayStats[0]?.commission || 0,
+            tenDaysAmount: tenDaysStats[0]?.amount || 0,
+            tenDaysCommission: tenDaysStats[0]?.commission || 0
+        },
+        providers: populatedProviderStats
+    };
+}
+
+async function getProviderCommissionDetails(providerId) {
+    const Booking = require("../schema/booking_schema");
+    // Ensure all models are registered
+    require("../schema/Service_schema");
+    require("../schema/Subservice_schema");
+    require("../schema/Sub_services1_schema");
+    require("../schema/Sub_service2_schema");
+    require("../schema/Sub_service3_schema");
+
+    const bookings = await Booking.find({
+        provider_id: providerId,
+        status: "Completed"
+    })
+        .populate({
+            path: "service_id",
+            populate: [
+                { path: "serviceId", select: "name" },
+                { path: "subServiceId", select: "name" },
+                { path: "subService1Id", select: "name" },
+                { path: "subService2Id", select: "name" }
+            ]
+        })
+        .sort({ createdAt: -1 });
+
+    return bookings;
+}
+
 module.exports = {
     addAdmin,
     fetchAllAdmins,
     modifyAdmin,
-    removeAdmin
+    removeAdmin,
+    getCommissionStats,
+    getProviderCommissionDetails
 };
 

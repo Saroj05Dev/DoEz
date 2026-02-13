@@ -6,8 +6,30 @@ const {
   toggleAvailability,
   getEarnings,
   handleKycUpload, submitFullKyc, listAllProviders, createProvider, adminUpdateProvider,
-  deleteProvider, approveKyc, updateProviderServices, getProvidersByServiceId
+  deleteProvider, approveKyc, updateProviderServices, getProvidersByServiceId, uploadPaymentQrCode
 } = require("../services/Provider_service");
+
+async function uploadPaymentQr(req, res) {
+  try {
+    if (!req.file)
+      return res
+        .status(400)
+        .json({ success: false, message: "No file uploaded" });
+
+    const result = await uploadPaymentQrCode(req.user.id, req.file);
+
+    return res.status(200).json({
+      success: true,
+      message: "Payment QR uploaded successfully",
+      data: result,
+    });
+  } catch (e) {
+    console.error("Payment QR Upload Error:", e);
+    return res
+      .status(e.statusCode || 500)
+      .json({ success: false, error: e.reason || "Upload failed" });
+  }
+}
 
 async function submitKyc(req, res) {
   try {
@@ -211,4 +233,5 @@ module.exports = {
   adminApproveKyc,
   updateServices,
   getProvidersByService,
+  uploadPaymentQr,
 };

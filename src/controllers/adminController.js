@@ -1,4 +1,4 @@
-const { addAdmin, fetchAllAdmins, modifyAdmin, removeAdmin } = require("../services/adminService");
+const { addAdmin, fetchAllAdmins, modifyAdmin, removeAdmin, getCommissionStats, getProviderCommissionDetails } = require("../services/adminService");
 
 async function createAdmin(req, res) {
     try {
@@ -50,9 +50,36 @@ async function deleteAdmin(req, res) {
     }
 }
 
+async function getCommissions(req, res) {
+    try {
+        const stats = await getCommissionStats();
+        return res.status(200).json({
+            success: true,
+            data: stats
+        });
+    } catch (error) {
+        return res.status(500).json({ success: false, message: error.message });
+    }
+}
+
+async function getProviderDetails(req, res) {
+    try {
+        const { providerId } = req.params;
+        const details = await getProviderCommissionDetails(providerId);
+        return res.status(200).json({
+            success: true,
+            data: details
+        });
+    } catch (error) {
+        return res.status(500).json({ success: false, message: error.message });
+    }
+}
+
 module.exports = {
     createAdmin,
     getAllAdmins,
     updateAdmin,
-    deleteAdmin
+    deleteAdmin,
+    getCommissions,
+    getProviderDetails
 };
