@@ -54,20 +54,82 @@ async function toggleAvailability(id, status) {
 
 async function getEarnings(id) {
   const Booking = require("../schema/booking_schema");
-  const completed = await Booking.countDocuments({
-    provider_id: id,
-    status: "Completed",
-  });
-  const agg = await Booking.aggregate([
+  const now = new Date();
+
+  // Calculate relative dates
+  const startOfToday = new Date(now);
+  startOfToday.setHours(0, 0, 0, 0);
+
+  const startOfYesterday = new Date(startOfToday);
+  startOfYesterday.setDate(startOfYesterday.getDate() - 1);
+
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+  const sevenDaysAgo = new Date(startOfToday);
+  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6);
+
+  const stats = await Booking.aggregate([
     {
       $match: {
         provider_id: new mongoose.Types.ObjectId(id),
-        status: "Completed",
-      },
+        status: "Completed"
+      }
     },
-    { $group: { _id: null, total: { $sum: "$amount" } } },
+    {
+      $facet: {
+        total: [
+          { $group: { _id: null, amount: { $sum: "$amount" }, count: { $sum: 1 } } }
+        ],
+        today: [
+          { $match: { updatedAt: { $gte: startOfToday } } },
+          { $group: { _id: null, amount: { $sum: "$amount" } } }
+        ],
+        yesterday: [
+          { $match: { updatedAt: { $gte: startOfYesterday, $lt: startOfToday } } },
+          { $group: { _id: null, amount: { $sum: "$amount" } } }
+        ],
+        monthly: [
+          { $match: { updatedAt: { $gte: startOfMonth } } },
+          { $group: { _id: null, amount: { $sum: "$amount" } } }
+        ],
+        daily: [
+          { $match: { updatedAt: { $gte: sevenDaysAgo } } },
+          {
+            $group: {
+              _id: { $dateToString: { format: "%Y-%m-%d", date: "$updatedAt" } },
+              amount: { $sum: "$amount" }
+            }
+          },
+          { $sort: { _id: 1 } }
+        ]
+      }
+    }
   ]);
-  return { completedJobs: completed, monthlyEarnings: agg[0]?.total || 0 };
+
+  const facetResult = stats[0] || {};
+
+  // Fill in missing days for the chart
+  const dailyEarnings = [];
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(sevenDaysAgo);
+    d.setDate(d.getDate() + i);
+    const dateStr = d.toISOString().split('T')[0];
+    const match = facetResult.daily?.find(item => item._id === dateStr);
+    dailyEarnings.push({
+      date: dateStr,
+      day: d.toLocaleDateString('en-US', { weekday: 'short' }),
+      amount: match ? match.amount : 0
+    });
+  }
+
+  return {
+    completedJobs: facetResult.total?.[0]?.count || 0,
+    totalEarnings: facetResult.total?.[0]?.amount || 0,
+    todayEarnings: facetResult.today?.[0]?.amount || 0,
+    yesterdayEarnings: facetResult.yesterday?.[0]?.amount || 0,
+    monthlyEarnings: facetResult.monthly?.[0]?.amount || 0,
+    dailyEarnings
+  };
 }
 
 async function handleKycUpload(userId, files) {
