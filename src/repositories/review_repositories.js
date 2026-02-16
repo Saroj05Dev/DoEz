@@ -23,7 +23,16 @@ async function getAllReviews() {
 async function getProviderReviews(providerId) {
     try {
         return await Review.find({ provider_id: providerId, isVisible: true })
-            .populate('customer_id', 'name')
+            .populate('customer_id', 'name email')
+            .populate({
+                path: 'booking_id',
+                populate: {
+                    path: 'service_id',
+                    populate: {
+                        path: 'serviceId'
+                    }
+                }
+            })
             .sort({ createdAt: -1 });
     } catch (error) {
         throw error;
