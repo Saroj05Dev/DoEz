@@ -6,10 +6,9 @@ async function login(req, res) {
   try {
     const user = await loginUser(loginPayload);
 
-    // Set JWT in httpOnly cookie
     res.cookie("authToken", user.token, {
       httpOnly: true,
-      secure: false, // true only in HTTPS (production)
+      secure: false, 
       sameSite: "lax", // FIXED (NOT strict)
       maxAge: 1000 * 60 * 60, // 1 hour
     });
@@ -18,7 +17,7 @@ async function login(req, res) {
       success: true,
       message: "Logged in successfully",
       data: {
-        token: user.token, // optional (for testing tools)
+        token: user.token, 
         userRole: user.role,
         userData: user.userData,
       },
