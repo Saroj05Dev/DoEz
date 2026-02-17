@@ -18,9 +18,16 @@ const reviewSchema = new mongoose.Schema(
       ref: "User",
       required: true,
     },
-    rating: { type: Number, min: 1, max: 5, required: true },
+    rating: { 
+      type: Number, 
+      min: 1, 
+      max: 5, 
+      required: true 
+    },
     comment: String,
-    isVisible: { type: Boolean, default: true },
+    isVisible: { 
+      type: Boolean, 
+      default: true },
   },
   { timestamps: true }
 );
