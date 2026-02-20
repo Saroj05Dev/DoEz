@@ -4,30 +4,30 @@ const { findOtp } = require("../repositories/otpRepository");
 const bcrypt = require("bcrypt");
 
 async function getUserProfile(userId) {
-    try {
-        const user = await findUserById(userId);
-        if (!user) throw { reason: "User not found", statusCode: 400 };
-        return user;
-    } catch (error) {
-        throw { reason: error.reason || "Failed to fetch user profile", statusCode: error.statusCode || 500 };
-    }
+  try {
+    const user = await findUserById(userId);
+    if (!user) throw { reason: "User not found", statusCode: 400 };
+    return user;
+  } catch (error) {
+    throw { reason: error.reason || "Failed to fetch user profile", statusCode: error.statusCode || 500 };
+  }
 }
 
 async function updateUserProfile(id, updatedData) {
-    try {
-        if (updatedData.password) {
-            updatedData.password = await bcrypt.hash(updatedData.password, 10);
-        }
-        delete updatedData.role; delete updatedData._id;
-        const updatedUser = await updateUserById(id, updatedData);
-        if (!updatedUser) throw { reason: "User not found or update failed", statusCode: 400 };
-        return updatedUser;
-    } catch (error) {
-        let reason = "Failed to update user profile";
-        if (error.code === 11000) reason = "Email or phone already exists";
-        else if (error.name === 'ValidationError') reason = error.message;
-        throw { reason, statusCode: error.statusCode || 400 };
+  try {
+    if (updatedData.password) {
+      updatedData.password = await bcrypt.hash(updatedData.password, 10);
     }
+    delete updatedData.role; delete updatedData._id;
+    const updatedUser = await updateUserById(id, updatedData);
+    if (!updatedUser) throw { reason: "User not found or update failed", statusCode: 400 };
+    return updatedUser;
+  } catch (error) {
+    let reason = "Failed to update user profile";
+    if (error.code === 11000) reason = "Email or phone already exists";
+    else if (error.name === 'ValidationError') reason = error.message;
+    throw { reason, statusCode: error.statusCode || 400 };
+  }
 }
 
 async function registerUser(userDetails) {
@@ -62,7 +62,23 @@ async function registerUser(userDetails) {
   });
 }
 
-async function getAllUsersService() {
-    return await require("../repositories/userRepository").getAllUsers();
+async function changePassword(userId, oldPassword, newPassword) {
+  try {
+    const user = await findUserById(userId);
+    if (!user) throw { reason: "User not found", statusCode: 404 };
+
+    const isMatch = await bcrypt.compare(oldPassword, user.password);
+    if (!isMatch) throw { reason: "Incorrect old password", statusCode: 400 };
+
+    const hashedNewPassword = await bcrypt.hash(newPassword, 10);
+    await updateUserById(userId, { password: hashedNewPassword });
+    return { message: "Password updated successfully" };
+  } catch (error) {
+    throw { reason: error.reason || "Failed to change password", statusCode: error.statusCode || 500 };
+  }
 }
-module.exports = { getUserProfile, updateUserProfile, registerUser, getAllUsersService };
+
+async function getAllUsersService() {
+  return await require("../repositories/userRepository").getAllUsers();
+}
+module.exports = { getUserProfile, updateUserProfile, registerUser, getAllUsersService, changePassword };

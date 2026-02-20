@@ -14,6 +14,11 @@ async function loginUser(authDetails) {
     throw { reason: "User not found", statusCode: 400 };
   }
 
+  // 1.5 Check if suspended
+  if (user.status === "suspended") {
+    throw { reason: "you are suspened by the admin please contant to admin", statusCode: 403 };
+  }
+
   // 2 Verify password
   const valid = await bcrypt.compare(password, user.password);
   if (!valid) {

@@ -100,6 +100,15 @@ const userSchema = new mongoose.Schema(
         ],
       },
     ],
+    profileImage: {
+      type: String,
+      default: null,
+    },
+    status: {
+      type: String,
+      enum: ["active", "suspended"],
+      default: "active",
+    },
   },
   { timestamps: true }
 );

@@ -1,4 +1,5 @@
-const { addAdmin, fetchAllAdmins, modifyAdmin, removeAdmin, getCommissionStats, getProviderCommissionDetails } = require("../services/adminService");
+const { addAdmin, fetchAllAdmins, modifyAdmin, toggleStatus, getCommissionStats, getProviderCommissionDetails } = require("../services/adminService");
+const { getAllUsersService } = require("../services/userService");
 
 async function createAdmin(req, res) {
     try {
@@ -38,12 +39,13 @@ async function updateAdmin(req, res) {
     }
 }
 
-async function deleteAdmin(req, res) {
+async function toggleAdminStatus(req, res) {
     try {
-        await removeAdmin(req.params.id);
+        const updated = await toggleStatus(req.params.id);
         return res.status(200).json({
             success: true,
-            message: "Admin deleted successfully"
+            message: `Admin status changed to ${updated.status}`,
+            data: updated
         });
     } catch (error) {
         return res.status(500).json({ success: false, message: error.message });
@@ -75,11 +77,24 @@ async function getProviderDetails(req, res) {
     }
 }
 
+async function getUsers(req, res) {
+    try {
+        const users = await getAllUsersService();
+        return res.status(200).json({
+            success: true,
+            data: users
+        });
+    } catch (error) {
+        return res.status(500).json({ success: false, message: error.message });
+    }
+}
+
 module.exports = {
     createAdmin,
     getAllAdmins,
     updateAdmin,
-    deleteAdmin,
+    toggleAdminStatus,
     getCommissions,
-    getProviderDetails
+    getProviderDetails,
+    getUsers
 };

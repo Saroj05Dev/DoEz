@@ -1,10 +1,10 @@
 const bcrypt = require("bcrypt");
-const { createAdmin, getAllAdmins, updateAdmin, deleteAdmin } = require("../repositories/adminRepository");
-const Admin = require("../schema/adminSchema");
+const { createAdmin, getAllAdmins, updateAdmin, toggleAdminStatus } = require("../repositories/adminRepository");
+const User = require("../schema/userSchema");
 
 async function addAdmin(adminDetails) {
-    const existingByEmail = await Admin.findOne({ email: adminDetails.email });
-    const existingByPhone = await Admin.findOne({ phone: adminDetails.phone });
+    const existingByEmail = await User.findOne({ email: adminDetails.email });
+    const existingByPhone = await User.findOne({ phone: adminDetails.phone });
 
     if (existingByEmail) {
         throw new Error("Email already exists. Please use another email.");
@@ -33,8 +33,8 @@ async function modifyAdmin(id, data) {
     return await updateAdmin(id, data);
 }
 
-async function removeAdmin(id) {
-    return await deleteAdmin(id);
+async function toggleStatus(id) {
+    return await toggleAdminStatus(id);
 }
 
 async function getCommissionStats() {
@@ -160,7 +160,7 @@ module.exports = {
     addAdmin,
     fetchAllAdmins,
     modifyAdmin,
-    removeAdmin,
+    toggleStatus,
     getCommissionStats,
     getProviderCommissionDetails
 };

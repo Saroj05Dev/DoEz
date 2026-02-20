@@ -89,6 +89,31 @@ async function getAllUsers(req, res) {
       .json({ success: false, error: e.reason });
   }
 }
+async function changePassword(req, res) {
+  try {
+    const { oldPassword, newPassword } = req.body;
+    const result = await require("../services/userService").changePassword(req.user.id, oldPassword, newPassword);
+    return res.status(200).json({ success: true, ...result });
+  } catch (error) {
+    return res
+      .status(error.statusCode || 500)
+      .json({ success: false, error: error.reason });
+  }
+}
+
+async function uploadProfileImage(req, res) {
+  try {
+    if (!req.file) throw { reason: "No image provided", statusCode: 400 };
+    const imageUrl = `/uploads/${req.file.filename}`;
+    await require("../services/userService").updateUserProfile(req.user.id, { profileImage: imageUrl });
+    return res.status(200).json({ success: true, data: { profileImage: imageUrl } });
+  } catch (error) {
+    return res
+      .status(error.statusCode || 500)
+      .json({ success: false, error: error.reason });
+  }
+}
+
 module.exports = {
   getProfile,
   updateProfile,
@@ -96,4 +121,7 @@ module.exports = {
   sendOtpToUser,
   verifyUserOtp,
   getAllUsers,
+  changePassword,
+  uploadProfileImage
 };
+
