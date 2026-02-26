@@ -32,23 +32,39 @@ async function updateProfile(req, res) {
 
 async function sendOtpToUser(req, res) {
   try {
-    await sendOtp(req.body.phone);
-    return res.status(200).json({ success: true, message: "OTP sent" });
+    const { email } = req.body;
+    const forceResend = req.body.forceResend === true;
+
+    if (!email) {
+      return res.status(400).json({ success: false, message: "Email is required" });
+    }
+
+    await sendOtp(email, forceResend);
+    return res.status(200).json({
+      success: true,
+      message: "OTP sent successfully. Please check your email.",
+    });
   } catch (e) {
     return res
       .status(e.statusCode || 500)
-      .json({ success: false, error: e.reason });
+      .json({ success: false, message: e.reason || "Failed to send OTP" });
   }
 }
 
 async function verifyUserOtp(req, res) {
   try {
-    await verifyOtp(req.body.phone, req.body.otp);
-    return res.status(200).json({ success: true, message: "OTP verified" });
+    const { email, otp } = req.body;
+
+    if (!email || !otp) {
+      return res.status(400).json({ success: false, message: "Email and OTP are required" });
+    }
+
+    await verifyOtp(email, otp);
+    return res.status(200).json({ success: true, message: "Email verified successfully" });
   } catch (e) {
     return res
       .status(e.statusCode || 500)
-      .json({ success: false, error: e.reason });
+      .json({ success: false, message: e.reason || "OTP verification failed" });
   }
 }
 

@@ -5,11 +5,10 @@ const { findUser, createUser } = require("../repositories/userRepository");
 const { findOtp } = require("../repositories/otpRepository");
 
 async function loginUser(authDetails) {
-  let { phone, password } = authDetails;
-  phone = phone.replace(/\D/g, "");
+  let { email, password } = authDetails;
 
   // 1 Check user
-  const user = await findUser({ phone });
+  const user = await findUser({ email });
   if (!user) {
     throw { reason: "User not found", statusCode: 400 };
   }
@@ -48,24 +47,33 @@ async function loginUser(authDetails) {
 
 async function registerAndLogin(userDetails) {
   let { name, email, phone, password, role } = userDetails;
-  phone = phone.replace(/\D/g, "");
 
   // 1 Check duplicates
-  const existing =
-    (await findUser({ email })) || (await findUser({ phone }));
-
-  if (existing) {
+  const existingEmail = await findUser({ email });
+  if (existingEmail) {
     throw {
-      reason: "User with this email or phone already exists",
+      reason: "User with this email already exists",
       statusCode: 400,
     };
   }
 
-  // 2 OTP must be verified
-  const otpStillExists = await findOtp(phone);
+  if (phone) {
+    const existingPhone = await findUser({ phone });
+    if (existingPhone) {
+      throw {
+        reason: "User with this phone already exists",
+        statusCode: 400,
+      };
+    }
+  }
+
+  // 2 OTP must be verified (by checking if they cleared the OTP from DB via verfication step)
+  // The logic in the original code checks if ANY OTP still exists for the phone to mean it's NOT verified.
+  // We will replicate this for email.
+  const otpStillExists = await findOtp(email);
   if (otpStillExists) {
     throw {
-      reason: "Phone number not verified. Please verify OTP.",
+      reason: "Email not verified. Please verify OTP.",
       statusCode: 400,
     };
   }

@@ -22,7 +22,7 @@ const userSchema = new mongoose.Schema(
     },
     phone: {
       type: String,
-      required: [true, "Phone number must be provided"],
+      sparse: true,
       unique: true,
       minLength: [10, "10 digits only"],
       maxLength: [10, "10 digits only"],
