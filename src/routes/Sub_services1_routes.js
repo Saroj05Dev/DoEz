@@ -13,19 +13,16 @@ router.post(
 
 router.get(
   "/getall",
-  isAuthenticated,
   subService1Controller.getAllSubService1
 );
 
 router.get(
   "/service/:serviceId",
-  isAuthenticated,
   subService1Controller.getSubService1ByServiceId
 );
 
 router.get(
   "/:id",
-  isAuthenticated,
   subService1Controller.getSubService1ById
 );
 

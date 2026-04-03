@@ -12,12 +12,12 @@ router.post(
   isAuthorized(["admin"]),
   subServiceController.createSubService,
 );
-router.get("/getall", isAuthenticated, subServiceController.getAllSubServices);
+router.get("/getall", subServiceController.getAllSubServices);
 router.get(
   "/service/:serviceId",
   subServiceController.getSubServicesByServiceId,
 );
-router.get("/:id", isAuthenticated, subServiceController.getSubServiceById);
+router.get("/:id", subServiceController.getSubServiceById);
 router.put(
   "/:id",
   isAuthenticated,
