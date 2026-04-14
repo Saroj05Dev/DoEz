@@ -1,4 +1,5 @@
 const { Server } = require("socket.io");
+const ServerConfig = require("./serverConfig");
 
 let io;
 const userSockets = new Map();
@@ -6,7 +7,7 @@ const userSockets = new Map();
 function initSocket(server) {
   io = new Server(server, {
     cors: {
-      origin: "http://localhost:5173",
+      origin: ServerConfig.CORS_ORIGIN,
       credentials: true,
     },
   });

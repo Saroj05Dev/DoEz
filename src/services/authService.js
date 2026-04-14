@@ -30,7 +30,7 @@ async function loginUser(authDetails) {
   const token = jwt.sign(
     { id: user._id, phone: user.phone, role },
     JWT_SECRET,
-    { expiresIn: "1h" }
+    { expiresIn: "7d" }
   );
 
   return {
@@ -108,7 +108,7 @@ async function registerAndLogin(userDetails) {
   const token = jwt.sign(
     { id: user._id, phone: user.phone, role: user.role },
     JWT_SECRET,
-    { expiresIn: "1h" }
+    { expiresIn: "7d" }
   );
 
   return {

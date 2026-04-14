@@ -9,9 +9,9 @@ async function login(req, res) {
     // Set JWT in httpOnly cookie
     res.cookie("authToken", user.token, {
       httpOnly: true,
-      secure: false, // true only in HTTPS (production)
-      sameSite: "lax", // FIXED (NOT strict)
-      maxAge: 1000 * 60 * 60, // 1 hour
+      secure: process.env.NODE_ENV === "production",
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     });
 
     res.status(200).json({
@@ -36,8 +36,8 @@ async function login(req, res) {
 async function logout(req, res) {
   res.clearCookie("authToken", {
     httpOnly: true,
-    sameSite: "lax",
-    secure: false,
+    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+    secure: process.env.NODE_ENV === "production",
   });
   res.status(200).json({
     success: true,
