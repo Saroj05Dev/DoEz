@@ -29,9 +29,24 @@ const server = http.createServer(app);
 // Initialize Socket.io
 initSocket(server);
 
+const allowedOrigins = [
+  ServerConfig.CORS_ORIGIN,
+  "http://localhost:5173",
+  "http://localhost:5174",
+  "http://localhost:3000",
+  "https://do-ez-ui.vercel.app"
+];
+
 app.use(
   cors({
-    origin: ServerConfig.CORS_ORIGIN,
+    origin: (origin, callback) => {
+      // Allow requests with no origin (like mobile apps or curl)
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
     allowedHeaders: [

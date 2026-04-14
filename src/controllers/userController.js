@@ -46,9 +46,10 @@ async function sendOtpToUser(req, res) {
       message: "OTP sent successfully. Please check your email.",
     });
   } catch (e) {
+    console.error("[sendOtpToUser Error]:", e);
     return res
       .status(e.statusCode || 500)
-      .json({ success: false, message: e.reason || "Failed to send OTP" });
+      .json({ success: false, message: e.reason || e.message || "Failed to send OTP" });
   }
 }
 
@@ -153,9 +154,10 @@ async function sendForgotPasswordOtp(req, res) {
       message: "OTP sent successfully. Please check your email.",
     });
   } catch (e) {
+    console.error("[sendForgotPasswordOtp Error]:", e);
     return res
       .status(e.statusCode || 500)
-      .json({ success: false, message: e.reason || "Failed to send OTP" });
+      .json({ success: false, message: e.reason || e.message || "Failed to send OTP" });
   }
 }
 
