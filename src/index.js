@@ -48,6 +48,10 @@ app.use(express.text());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
+app.get("/ping", (req, res) => {
+  res.json({ success: true, message: "pong", timestamp: new Date().toISOString() });
+});
+
 app.use("/api/users", userRouter);
 app.use("/api/auth", authRouter);
 app.use("/api/services", serviceRoutes);
