@@ -29,6 +29,8 @@ const server = http.createServer(app);
 // Initialize Socket.io
 initSocket(server);
 
+app.set("trust proxy", 1); // Trust proxy required for secure cookies over HTTPS (e.g. Render/Heroku)
+
 const allowedOrigins = [
   ServerConfig.CORS_ORIGIN,
   "http://localhost:5173",
@@ -40,11 +42,18 @@ const allowedOrigins = [
 app.use(
   cors({
     origin: (origin, callback) => {
-      // Allow requests with no origin (like mobile apps or curl)
-      if (!origin || allowedOrigins.includes(origin)) {
+      // Allow if origin is in the allowed list, or if it's a vercel domain
+      if (!origin || allowedOrigins.includes(origin) || (origin && origin.endsWith(".vercel.app"))) {
         callback(null, true);
       } else {
-        callback(new Error("Not allowed by CORS"));
+        // Strip trailing slash if present on CORS_ORIGIN
+        const cleanCorsOrigin = ServerConfig.CORS_ORIGIN ? ServerConfig.CORS_ORIGIN.replace(/\/$/, '') : '';
+        if (origin === cleanCorsOrigin) {
+          callback(null, true);
+        } else {
+          console.warn("[CORS] Blocked origin:", origin);
+          callback(new Error("Not allowed by CORS"));
+        }
       }
     },
     credentials: true,
