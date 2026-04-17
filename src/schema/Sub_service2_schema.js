@@ -10,7 +10,6 @@ const subService2Schema = new Schema(
     },
     image: {
       type: String,
-      required: true,
     },
     price: {
       type: Number,

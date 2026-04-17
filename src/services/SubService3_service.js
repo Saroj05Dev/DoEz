@@ -14,7 +14,6 @@ async function createSubService3(data) {
 
   if (
     !subService3Name ||
-    !image ||
     price === undefined ||
     !description ||
     !serviceId ||

@@ -13,7 +13,6 @@ async function createSubService2(data) {
 
   if (
     !name ||
-    !image ||
     price === undefined ||
     !description ||
     !serviceId ||
