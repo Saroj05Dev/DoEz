@@ -8,6 +8,7 @@ const {
   handleKycUpload, submitFullKyc, listAllProviders, createProvider, adminUpdateProvider,
   deleteProvider, approveKyc, updateProviderServices, getProvidersByServiceId, uploadPaymentQrCode
 } = require("../services/Provider_service");
+const { getIo } = require("../config/socket");
 
 async function uploadPaymentQr(req, res) {
   try {
@@ -88,9 +89,45 @@ async function updateProfile(req, res) {
 
 async function toggleAvail(req, res) {
   try {
+    const { status, lat, lng } = req.body;
+    const coords = lat != null && lng != null
+      ? { lat: Number(lat), lng: Number(lng) }
+      : null;
+    const updatedProvider = await toggleAvailability(req.user.id, status, coords);
+
+    // Broadcast real-time availability change to all customers viewing service pages
+    try {
+      const io = getIo();
+      if (io && updatedProvider) {
+        // Get provider's service IDs to notify relevant service rooms
+        const serviceIds = (updatedProvider.providerServices || [])
+          .map((ps) => ps.subServiceId?.toString())
+          .filter(Boolean);
+
+        const payload = {
+          providerId: req.user.id,
+          availability: status,
+          providerName: updatedProvider.name,
+          lat: updatedProvider.currentLat,
+          lng: updatedProvider.currentLong,
+        };
+
+        // Broadcast to each service room this provider belongs to
+        serviceIds.forEach((sId) => {
+          io.to(`service_${sId}`).emit("providerAvailabilityChanged", payload);
+        });
+
+        // Also broadcast globally for any page that might need it
+        io.emit("providerAvailabilityChanged", payload);
+      }
+    } catch (socketErr) {
+      // Socket broadcast failure should NOT break the API response
+      console.error("Socket broadcast error (non-fatal):", socketErr.message);
+    }
+
     return res.status(200).json({
       success: true,
-      data: await toggleAvailability(req.user.id, req.body.status),
+      data: updatedProvider,
     });
   } catch (e) {
     return res
@@ -205,7 +242,13 @@ async function updateServices(req, res) {
 async function getProvidersByService(req, res) {
   try {
     const { subService3Id } = req.params;
-    const providers = await getProvidersByServiceId(subService3Id);
+    const { lat, lng } = req.query;
+    const customerCoords =
+      lat && lng ? { lat: Number(lat), lng: Number(lng) } : null;
+    const providers = await getProvidersByServiceId(
+      subService3Id,
+      customerCoords
+    );
     return res.status(200).json({
       success: true,
       data: providers,

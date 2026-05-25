@@ -75,6 +75,19 @@ const userSchema = new mongoose.Schema(
       type: Number,
       default: null,
     },
+    // GeoJSON point for geospatial proximity queries (2dsphere indexed)
+    // coordinates: [longitude, latitude] — GeoJSON standard order
+    location: {
+      type: {
+        type: String,
+        enum: ["Point"],
+        default: "Point",
+      },
+      coordinates: {
+        type: [Number],
+        default: [0, 0],
+      },
+    },
     providerServices: [
       {
         serviceId: {
@@ -113,5 +126,8 @@ const userSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
+
+// 2dsphere index for geospatial proximity queries (e.g. find providers within 15km)
+userSchema.index({ location: "2dsphere" });
 
 module.exports = mongoose.model("User", userSchema);
