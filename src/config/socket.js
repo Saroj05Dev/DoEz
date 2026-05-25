@@ -47,6 +47,20 @@ function initSocket(server) {
     });
 
     // ===============================
+    // SERVICE ROOM (for real-time provider availability updates)
+    // Customer joins when viewing a service page, leaves when navigating away
+    // ===============================
+    socket.on("joinServiceRoom", (serviceId) => {
+      if (!serviceId) return;
+      socket.join(`service_${serviceId}`);
+    });
+
+    socket.on("leaveServiceRoom", (serviceId) => {
+      if (!serviceId) return;
+      socket.leave(`service_${serviceId}`);
+    });
+
+    // ===============================
     // PROVIDER LIVE LOCATION
     // ===============================
     socket.on("updateLocation", async (data) => {
@@ -187,4 +201,10 @@ function initSocket(server) {
   return io;
 }
 
-module.exports = { initSocket };
+// Get the socket.io instance (used by controllers to broadcast events)
+function getIo() {
+  return io;
+}
+
+module.exports = { initSocket, getIo };
+

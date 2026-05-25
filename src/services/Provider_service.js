@@ -46,10 +46,36 @@ async function updateProviderProfile(id, data) {
   return await updateUserById(id, updates);
 }
 
-async function toggleAvailability(id, status) {
+async function toggleAvailability(id, status, coords) {
   if (!["online", "offline"].includes(status))
     throw { reason: "Invalid status", statusCode: 400 };
-  return await updateUserById(id, { availability: status });
+
+  const updates = { availability: status };
+
+  if (status === "online") {
+    // GPS location is MANDATORY to go online — no exceptions
+    if (
+      !coords ||
+      !Number.isFinite(coords.lat) ||
+      !Number.isFinite(coords.lng)
+    ) {
+      throw {
+        reason:
+          "Location permission is required to go online. Please allow location access in your browser.",
+        statusCode: 400,
+      };
+    }
+    // Store in legacy fields for backward compatibility
+    updates.currentLat = coords.lat;
+    updates.currentLong = coords.lng;
+    // Store as GeoJSON for 2dsphere geospatial queries
+    updates.location = {
+      type: "Point",
+      coordinates: [coords.lng, coords.lat], // GeoJSON: [longitude, latitude]
+    };
+  }
+
+  return await updateUserById(id, updates);
 }
 
 async function getEarnings(id) {
@@ -293,18 +319,42 @@ const SubService3 = require("../schema/Sub_service3_schema");
 
 // Get providers by specific service ID (SubService3)
 // Get providers by specific service ID (SubService3)
-async function getProvidersByServiceId(subService3Id) {
+async function getProvidersByServiceId(subService3Id, customerCoords) {
   // First, find the subService3 to get its parent subServiceId
   const subService3 = await SubService3.findById(subService3Id);
   if (!subService3) return [];
 
   const targetSubServiceId = subService3.subServiceId;
 
-  return await User.find({
+  const query = {
     role: "provider",
-    kycStatus: "approved", // Only show approved providers
+    kycStatus: "approved",
+    availability: "online", // Only show online providers
     "providerServices.subServiceId": targetSubServiceId,
-  }).select("name rates experienceYears workArea providerServices");
+  };
+
+  // If customer coords provided, filter by 15km radius using 2dsphere index
+  if (
+    customerCoords &&
+    Number.isFinite(customerCoords.lat) &&
+    Number.isFinite(customerCoords.lng)
+  ) {
+    query.location = {
+      $nearSphere: {
+        $geometry: {
+          type: "Point",
+          coordinates: [customerCoords.lng, customerCoords.lat], // GeoJSON: [lng, lat]
+        },
+        $maxDistance: 15000, // 15 km in meters
+      },
+    };
+  }
+
+  return await User.find(query)
+    .select(
+      "name rates experienceYears workArea providerServices currentLat currentLong availability"
+    )
+    .limit(50);
 }
 
 async function uploadPaymentQrCode(userId, file) {
