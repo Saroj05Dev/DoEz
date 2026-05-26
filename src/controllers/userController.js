@@ -9,6 +9,7 @@ const { registerAndLogin, resetPassword } = require("../services/authService");
 const { sendOtp, verifyOtp } = require("../services/otpService");
 const { findUser } = require("../repositories/userRepository");
 const { uploadToCloudinary } = require("../utils/cloudinaryUpload");
+const { getIo } = require("../config/socket");
 
 async function getProfile(req, res) {
   try {
@@ -218,6 +219,17 @@ async function updateUserStatusController(req, res) {
     }
 
     const updated = await updateUserStatus(id, status);
+
+    if (status === "suspended") {
+      const io = getIo();
+      if (io) {
+        io.to(`user_${id}`).emit("accountSuspended", {
+          message: "Your account has been suspended by the admin. You are being logged out.",
+          forceLogout: true
+        });
+      }
+    }
+
     return res.status(200).json({
       success: true,
       message: `User account has been ${status === "active" ? "activated" : "suspended"}`,

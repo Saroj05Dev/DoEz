@@ -24,6 +24,14 @@ async function isAuthenticated(req, res, next) {
       });
     }
 
+    if (user.status === "suspended") {
+      return res.status(401).json({
+        success: false,
+        message: "Your account has been suspended by the admin. Please contact support.",
+        error: "Account Suspended"
+      });
+    }
+
     // ✅ attach FULL user from DB
     req.user = user;
 
